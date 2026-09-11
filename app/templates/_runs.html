@@ -1,0 +1,115 @@
+{% macro decision_rows(run) %}
+  {% set shown = run.decisions | rejectattr('outcome', 'equalto', Outcome.ALREADY_PUSHED) | list %}
+  {% if run.error %}
+    <p class="px-5 py-3 font-mono text-xs text-red-400">{{ run.error }}</p>
+  {% elif not shown %}
+    <p class="px-5 py-3 text-sm text-slate-500">Nem volt teendő.</p>
+  {% else %}
+    <ul class="divide-y divide-slate-800/60" data-paged data-page-size="25">
+      {% for d in shown %}
+        {% set tone = outcome_tone(d.outcome) %}
+        <li class="flex flex-col gap-0.5 px-5 py-2.5 sm:flex-row sm:items-baseline sm:gap-3">
+          <span class="min-w-0 flex-1 truncate text-sm text-slate-200">{{ d.name }}</span>
+          <span class="shrink-0 text-xs
+            {% if tone == 'good' %}text-emerald-400{% elif tone == 'bad' %}text-red-400{% else %}text-slate-500{% endif %}">
+            {{ outcome_sentence(d.outcome) }}{% if d.detail and d.outcome != Outcome.PUSHED and d.outcome != Outcome.ALREADY_CACHED %}
+              <span class="text-slate-600">({{ d.detail }})</span>{% endif %}
+          </span>
+        </li>
+      {% endfor %}
+    </ul>
+    <nav data-pager class="hidden items-center justify-between gap-3 border-t border-slate-800 px-5 py-2 text-xs">
+      <button type="button" data-prev
+        class="rounded-md border border-slate-700 px-2.5 py-1 text-slate-400 hover:text-slate-100
+               disabled:cursor-default disabled:opacity-30 disabled:hover:text-slate-400">Előző</button>
+      <span data-label class="text-slate-500"></span>
+      <button type="button" data-next
+        class="rounded-md border border-slate-700 px-2.5 py-1 text-slate-400 hover:text-slate-100
+               disabled:cursor-default disabled:opacity-30 disabled:hover:text-slate-400">Következő</button>
+    </nav>
+  {% endif %}
+{% endmacro %}
+
+{% if not runs %}
+  <div class="rounded-xl border border-dashed border-slate-800 p-6 text-center text-sm text-slate-500">
+    {{ empty_text }}
+  </div>
+{% else %}
+  {% set latest = runs[0] %}
+  {% set earlier = runs[1:] %}
+
+  <article class="overflow-hidden rounded-xl border border-slate-800 bg-slate-900/40">
+    <header class="border-b border-slate-800 bg-slate-900/60 px-5 py-3">
+      <div class="flex items-baseline justify-between">
+        <h3 class="text-sm font-medium">Legutóbbi futás</h3>
+        <span class="text-xs text-slate-500">{{ latest.started_at | relative_time }}</span>
+      </div>
+      {% if latest.counts %}
+        <p class="mt-1 text-xs text-slate-500">
+          {% for outcome, n in latest.counts.items() %}{{ outcome_label(outcome) }}: {{ n }}{% if not loop.last %} · {% endif %}{% endfor %}
+        </p>
+      {% endif %}
+    </header>
+    {{ decision_rows(latest) }}
+  </article>
+
+  {% if earlier %}
+    <details class="group mt-4 overflow-hidden rounded-xl border border-slate-800 bg-slate-900/40">
+      <summary class="flex cursor-pointer select-none list-none items-center gap-2 border-b border-slate-800 bg-slate-900/60 px-5 py-3 text-sm font-medium marker:content-none">
+        <span class="text-base leading-none text-slate-100 group-open:hidden">▸</span><span class="hidden text-base leading-none text-slate-100 group-open:inline">▾</span>
+        Korábbi futások
+        <span class="ml-auto text-xs font-normal text-slate-500">{{ earlier | length }}</span>
+      </summary>
+      <div class="divide-y divide-slate-800">
+        {% for run in earlier %}
+          <div>
+            <div class="flex items-baseline justify-between px-5 pt-3 text-xs text-slate-500">
+              <span>{{ run.started_at | relative_time }}</span>
+              <span>
+                {% for outcome, n in run.counts.items() %}{{ outcome_label(outcome) }}: {{ n }}{% if not loop.last %} · {% endif %}{% endfor %}
+              </span>
+            </div>
+            {{ decision_rows(run) }}
+          </div>
+        {% endfor %}
+      </div>
+    </details>
+  {% endif %}
+{% endif %}
+
+<script>
+  // Paging is done here rather than in the query: a run is read in one go and
+  // the lists are short enough to hold, but long enough to be unreadable.
+  document.querySelectorAll("ul[data-paged]").forEach(function (list) {
+    var size = Number(list.dataset.pageSize) || 25;
+    var items = Array.prototype.slice.call(list.children);
+    var pager = list.nextElementSibling;
+    if (!pager || items.length <= size) return;
+
+    var pages = Math.ceil(items.length / size);
+    var prev = pager.querySelector("[data-prev]");
+    var next = pager.querySelector("[data-next]");
+    var label = pager.querySelector("[data-label]");
+    var page = 0;
+
+    pager.classList.remove("hidden");
+    pager.classList.add("flex");
+
+    function render() {
+      var first = page * size;
+      var last = Math.min(first + size, items.length);
+      // Inline style, not the hidden attribute: these rows are Tailwind
+      // `flex`, and an author display rule beats the UA [hidden] rule.
+      items.forEach(function (el, i) {
+        el.style.display = i < first || i >= last ? "none" : "";
+      });
+      label.textContent = (first + 1) + "-" + last + " / " + items.length;
+      prev.disabled = page === 0;
+      next.disabled = page >= pages - 1;
+    }
+
+    prev.addEventListener("click", function () { if (page > 0) { page--; render(); } });
+    next.addEventListener("click", function () { if (page < pages - 1) { page++; render(); } });
+    render();
+  });
+</script>

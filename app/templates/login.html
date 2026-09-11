@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block content %}
+<form method="post" action="/login" class="mx-auto max-w-sm space-y-4">
+  <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-500">Bejelentkezés</h2>
+  <input name="password" type="password" autofocus required placeholder="Jelszó"
+    class="w-full rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm">
+  {% if request.query_params.get('error') %}
+    <p class="text-sm text-red-400">Hibás jelszó.</p>
+  {% endif %}
+  <button class="w-full rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium hover:bg-indigo-500">Belépés</button>
+  <p class="border-t border-slate-800 pt-4 text-xs leading-relaxed text-slate-500">
+    Az első indításkor generált jelszót kiírjuk a logba
+    (<code class="text-slate-400">docker compose logs</code>), vagy megadhatod az
+    <code class="text-slate-400">ADMIN_PASSWORD</code> környezeti változóval.
+  </p>
+</form>
+{% endblock %}

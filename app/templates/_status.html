@@ -1,0 +1,14 @@
+{% if not stremhu.ok %}
+<div class="mb-8 rounded-xl border border-red-900/70 bg-red-950/40 p-4">
+  <p class="font-medium text-red-300">A stremhu adatbázis nem olvasható</p>
+  <p class="mt-1 font-mono text-xs text-red-400/80">{{ stremhu.error }}</p>
+  <p class="mt-2 text-sm text-slate-400">
+    Ellenőrizd az adatkönyvtárat az <a href="/" class="underline">áttekintés</a> oldalon.
+  </p>
+</div>
+{% elif not stremhu.known %}
+<div class="mb-8 rounded-xl border border-amber-900/70 bg-amber-950/30 p-4 text-sm">
+  <span class="text-amber-300">A stremhu séma ({{ stremhu.revision }}) újabb, mint amivel ezt teszteltük.</span>
+  <span class="text-slate-400">Valószínűleg működik, de ha hibásak a számok, itt érdemes kezdeni a keresést.</span>
+</div>
+{% endif %}

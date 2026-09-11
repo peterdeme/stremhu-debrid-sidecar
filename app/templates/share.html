@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% set page = '/share' %}
+{% block content %}
+
+<section class="mb-8">
+  <p class="text-sm leading-relaxed text-slate-400">
+    A debrid könyvtáradba feltöltött torrentek annak ellenére, hogy teljesen publikusak és elérhetőek, rajtad kívül
+    senki
+    nem tud róluk. Ez esetben csak bizonyos ideig lesz megtalálható a debrid szolgáltatónál, hisz azok a gyakran
+    keresett
+    file-okat tartják meg hossszabb ideig. Ha azt szeretnéd,
+    hogy mások is megtalálhassák őket, a hash-eket közzé kell tenni egy olyan helyen, amit a
+    scraperek olvasnak. Csak a hash, a fájlnév és a méret kerül ki, maga a tartalom vagy bármilyen személyes azonosító
+    soha.
+  </p>
+</section>
+
+<form method="post" action="/settings/share" class="space-y-6">
+
+  {% for key, target in sharing_targets.items() %}
+  <section class="overflow-hidden rounded-xl border border-slate-800 bg-slate-900/40">
+    <header class="flex items-center justify-between border-b border-slate-800 bg-slate-900/60 px-5 py-3">
+      <div class="flex items-baseline gap-2">
+        <h2 class="text-sm font-medium">{{ target.name }}</h2>
+        <span class="text-xs text-slate-500">hash lista</span>
+      </div>
+      <label class="flex items-center gap-2 text-xs text-slate-400">
+        <input type="checkbox" name="{{ key }}_enabled" value="true" {% if configured_sharing.get(key) and
+          configured_sharing[key].enabled %}checked{% endif %} class="rounded border-slate-700 bg-slate-900">
+        bekapcsolva
+      </label>
+    </header>
+
+    <div class="divide-y divide-slate-800/60">
+      <div class="p-5">
+        <p class="text-xs leading-relaxed text-slate-500">
+          A <a href="https://debridmediamanager.com" class="underline hover:text-slate-300">Debrid
+            Media Manager</a> hash listái nyilvános, névtelen gyűjtemények: fájlnevet, hash-t és méretet tartalmaz.
+          Ezeket olvassa be a
+          <a href="https://github.com/iPromKnight/zilean" class="underline hover:text-slate-300">Zilean</a>
+          közvetlenül, és a <a href="https://github.com/g0ldyy/comet" class="underline hover:text-slate-300">Comet</a>
+          naponta, így kerül be a tartalom abba a keresőhálózatba, amit mások is használnak.
+        </p>
+      </div>
+
+      <div class="p-5">
+        <h3 class="text-sm font-medium text-slate-300">Mit küldünk el pontosan?</h3>
+        <div class="mt-2">
+          <p class="text-sm leading-relaxed text-slate-400">
+            A debrid könyvtáradból összeszedjük a fájlneveket, a hash-eket és a méreteket, és ezeket
+            egy csomagban elküldjük a Debrid Media Managernek. Tételenként <a href="{{ PUBLISH_PAYLOAD_URL }}"
+              class="underline hover:text-slate-300">ennyi</a> megy ki:
+          </p>
+          <pre class="mt-3 overflow-x-auto rounded-lg border border-slate-800 bg-slate-950 p-3 text-xs text-slate-300"><code>{
+  "filename": "The.Hungarian.Boys.S01.1080p.BluRay.DDP5.1.x264.HUN.ENG-TST1",
+  "hash": "fbb934e99e0",
+  "bytes": 512985
+}</code></pre>
+        </div>
+      </div>
+
+    </div>
+  </section>
+  {% endfor %}
+
+  <section class="overflow-hidden rounded-xl border border-slate-800 bg-slate-900/40">
+    <header class="flex items-center justify-between border-b border-slate-800 bg-slate-900/60 px-5 py-3">
+      <h2 class="text-sm font-medium">Ütemezett megosztás</h2>
+      <label class="flex items-center gap-2 text-xs text-slate-400">
+        <input type="checkbox" name="publish_enabled" value="true" {% if cfg.publish_enabled %}checked{% endif %}
+          class="rounded border-slate-700 bg-slate-900">
+        bekapcsolva
+      </label>
+    </header>
+
+    <div class="p-5">
+      <label class="block text-sm">Feltöltés gyakorisága (óra)
+        <input name="publish_interval_hours" type="number" min="{{ min_publish_hours }}" step="1"
+          value="{{ cfg.publish_interval_hours }}"
+          class="mt-1.5 w-full rounded-md border border-slate-700 bg-slate-900 px-3 py-2 sm:w-48">
+      </label>
+      <p class="mt-2 text-xs leading-relaxed text-slate-500">
+        A DMM ugyan egy adatbázis, azonban egy git repó
+        (<a href="https://github.com/debridmediamanager/hashlists"
+          class="underline hover:text-slate-300">debridmediamanager/hashlists</a>)
+        részeként, amibe nem ideális túl sűrűn adatot szinkronizálni.
+        Ezért a minimális szinkronizációs idő {{ min_publish_hours }} óra, ennél kisebb értéket
+        a mentés felfelé kerekít.
+      </p>
+    </div>
+  </section>
+
+  <div class="flex justify-end border-t border-slate-800 pt-6">
+    <button class="rounded-md bg-indigo-600 px-5 py-2 text-sm font-medium hover:bg-indigo-500">Mentés</button>
+  </div>
+</form>
+
+<section class="mt-10">
+  <div class="mb-3 flex items-baseline justify-between">
+    <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-500">Futások</h2>
+    <span class="text-xs text-slate-500">{{ published }} hash megosztva eddig</span>
+  </div>
+
+  <div class="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-slate-800 bg-slate-900/40 p-4">
+    <form method="post" action="/run/publish_to_community">
+      <button class="rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-medium hover:bg-indigo-500
+        {% if JobName.PUBLISH_TO_COMMUNITY in running %}opacity-50{% endif %}">
+        {% if JobName.PUBLISH_TO_COMMUNITY in running %}Megosztás folyamatban…{% else %}Megosztás most{% endif %}
+      </button>
+    </form>
+    {% if last_hashlist %}
+    <span class="text-slate-700">·</span>
+    <a href="{{ last_hashlist }}" class="text-sm text-slate-400 underline hover:text-slate-200">
+      legutóbbi hash lista
+    </a>
+    {% endif %}
+  </div>
+
+  {% with run_label = 'Megosztás', empty_text = 'Még nem osztottunk meg semmit.' %}
+  {% include "_runs.html" %}
+  {% endwith %}
+</section>
+
+{% endblock %}

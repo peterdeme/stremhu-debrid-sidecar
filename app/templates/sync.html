@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+{% set page = '/sync' %}
+{% block content %}
+
+<details class="group mb-4 overflow-hidden rounded-xl border border-slate-800 bg-slate-900/40">
+  <summary
+    class="flex cursor-pointer select-none list-none items-center gap-2 border-b border-slate-800 bg-slate-900/60 px-5 py-3 text-sm font-medium marker:content-none">
+    <span class="text-base leading-none text-slate-100 group-open:hidden">▸</span><span
+      class="hidden text-base leading-none text-slate-100 group-open:inline">▾</span>
+    Működési elv
+  </summary>
+  <div class="p-5">
+    <p class="text-sm leading-relaxed text-slate-400">
+      A Stremhu-ban megnézett torrentek feltöltése a debrid fiókodba.
+    </p>
+    <p class="mt-3 text-sm leading-relaxed text-slate-400">
+      Ha ugyanazt a torrentet már valaki más feltöltötte a debrid szolgáltatódba, akkor nem töltődik le újra, hanem
+      "cached"-ként jelenik meg a saját könyvtáradban.
+    </p>
+    <p class="mt-3 text-sm leading-relaxed text-slate-400">
+      A szolgáltatóhoz feltöltött <code class="text-slate-300">.torrent</code> fájlokban benne van a passkey-ed. Ez nem
+      tartalmaz semmilyen azonosítási adatot (pl név, vagy jelszó), hanem egy egyedi azonosító, ami téged párosít egy
+      bizonyos torrent file-hoz.
+      Ha véletlenül kiszivárog, a legrosszabb, ami történhet, hogy valaki pontosan azt az egy torrentet a te nevedben
+      tölti le. Nagyjából olyan,
+      mintha átküldenél egy torrent fájlt egy ismerősödnek, és ő letöltené.
+    </p>
+    <p class="mt-3 text-sm leading-relaxed text-slate-500">
+      A passkey bármikor cserélhető a tracker felületén, így például nCore-on és bitHUmen-en is bármikor
+      megváltoztahatod.
+    </p>
+  </div>
+</details>
+
+<aside class="mb-8 rounded-xl border border-slate-800 bg-slate-900/30 p-5">
+  <h2 class="text-sm font-medium text-slate-300">Jelezd a trackernek, hogy seedboxot használsz</h2>
+  <p class="mt-2 text-sm leading-relaxed text-slate-400">
+    A debrid szolgáltató a saját gépeiről tölt és seedel, tehát a tracker ugyanahhoz a fiókhoz
+    több IP címről is fog forgalmat látni. Ez teljesen normális seedbox használat, de ha nem szólsz
+    róla, könnyen tűnhet account megosztásnak.
+  </p>
+  <p class="mt-2 text-sm leading-relaxed text-slate-400">
+    nCore-on a <span class="text-slate-300">Profil &rarr; Beállítások &rarr; Extra</span> fülön van
+    egy „Üzenet a staffnak" mező. Írd bele, hogy seedboxot használsz, ezért több IP címről érkezik
+    letöltés.
+  </p>
+</aside>
+
+<form method="post" action="/settings/sync" class="space-y-6">
+
+  <section class="overflow-hidden rounded-xl border border-slate-800 bg-slate-900/40">
+    <header class="flex items-center justify-between border-b border-slate-800 bg-slate-900/60 px-5 py-3">
+      <h2 class="text-sm font-medium">Szinkronizálás</h2>
+      <label class="flex items-center gap-2 text-xs text-slate-400">
+        <input type="checkbox" name="push_enabled" value="true" {% if cfg.push_enabled %}checked{% endif %}
+          class="rounded border-slate-700 bg-slate-900">
+        bekapcsolva
+      </label>
+    </header>
+
+    <div class="divide-y divide-slate-800/60">
+      <div class="grid gap-5 p-5 sm:grid-cols-2">
+        <label class="block text-sm">Szinkronizálás gyakoriság (perc)
+          <input name="push_interval_minutes" type="number" min="1" value="{{ cfg.push_interval_minutes }}"
+            class="mt-1.5 w-full rounded-md border border-slate-700 bg-slate-900 px-3 py-2">
+        </label>
+        <label class="block text-sm">Visszatekintés (óra)
+          <input name="lookback_hours" type="number" min="1" value="{{ cfg.lookback_hours }}"
+            class="mt-1.5 w-full rounded-md border border-slate-700 bg-slate-900 px-3 py-2">
+        </label>
+        <div
+          class="rounded-lg border border-slate-800 bg-slate-950/40 p-3 text-xs leading-relaxed text-slate-400 sm:col-span-2">
+          A stremhu egy idő után törli a letöltött torrentek adatait. Ezt a saját felületén, a
+          <span class="text-slate-300">/dashboard/system</span> oldalon, a
+          <span class="text-slate-300">„Torrent fájlok cache kezelése"</span> résznél tudod
+          állítani. Érdemes itt ugyanannyi időt megadni: ennél hosszabb visszatekintésnek nincs
+          értelme, mert amit a stremhu már eldobott, azt mi sem találjuk meg.
+        </div>
+        <p class="text-xs leading-relaxed text-slate-400 sm:col-span-2">
+          {% if cfg.push_enabled %}
+          A jelenlegi beállításaid szerint <span class="text-slate-200">{{ cfg.push_interval_minutes }}</span>
+          percenként átnézzük a stremhu adatbázisát az elmúlt
+          <span class="text-slate-200">{{ cfg.lookback_hours }}</span> órára, és megkeressük
+          azokat a torrenteket, amik még nincsenek fent a debrid szolgáltatódon.
+          {% else %}
+          A feltöltés jelenleg ki van kapcsolva, szóval semmi nem fut magától. A fenti gombbal
+          viszont bármikor elindíthatod kézzel.
+          {% endif %}
+        </p>
+      </div>
+
+      <div class="p-5">
+        <label class="block text-sm">Minimum letöltött arány
+          <span class="mt-1.5 flex w-full items-center rounded-md border border-slate-700 bg-slate-900 sm:w-48">
+            <input name="min_fetched_percent" type="number" step="5" min="0" max="100"
+              value="{{ cfg.min_fetched_percent }}" class="w-full border-0 bg-transparent px-3 py-2 focus:outline-none">
+            <span class="pr-3 text-slate-500">%</span>
+          </span>
+        </label>
+        <p class="mt-2 text-xs leading-relaxed text-slate-500">
+          Mennyi volt letöltve a fájlból, amikor abbahagytad. Ez szűri ki azt, amit csak
+          elindítottál és rögtön otthagytál.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  {% for key, provider in providers.items() %}
+  {% set status = debrid_status.get(key) %}
+  {% set row = configured.get(key) %}
+  <section class="overflow-hidden rounded-xl border border-slate-800 bg-slate-900/40">
+    <header class="flex items-center justify-between border-b border-slate-800 bg-slate-900/60 px-5 py-3">
+      <div class="flex items-baseline gap-2">
+        <h2 class="text-sm font-medium">{{ provider.name }}</h2>
+        <span class="text-xs text-slate-500">debrid szolgáltatás</span>
+      </div>
+      {% if status and status.ok %}
+      <span class="text-xs text-emerald-400">{{ status.account.plan.name }}</span>
+      {% endif %}
+    </header>
+
+    <div class="divide-y divide-slate-800/60">
+      <div class="p-5">
+        <label class="block text-sm">API kulcs
+          <input name="{{ key }}_api_key" type="password" autocomplete="new-password"
+            placeholder="{% if row %}változatlan{% else %}még nincs megadva{% endif %}"
+            class="mt-1.5 w-full rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm">
+        </label>
+        <div class="mt-2 flex flex-wrap items-baseline gap-3">
+          <p class="text-xs text-slate-500">
+            {% if row %}
+            Már van elmentett kulcs. Hagyd üresen, ha nem akarod cserélni.
+            {% else %}
+            {{ provider.key_hint }}
+            {% endif %}
+          </p>
+          {% if row %}
+          <button type="submit" formaction="/debrid/{{ key }}/remove" formnovalidate
+            onclick="return confirm('Biztosan törlöd a {{ provider.name }} kulcsot?')"
+            class="ml-auto rounded-md border border-slate-700 px-2.5 py-1 text-xs text-slate-400 hover:border-red-800 hover:text-red-300">
+            Kulcs törlése
+          </button>
+          {% endif %}
+        </div>
+
+        {% if status %}
+        {% if status.ok %}
+        {% set acc = status.account %}
+        <div class="mt-4 rounded-lg border border-emerald-900/70 bg-emerald-950/30 p-3 text-xs">
+          <p class="text-emerald-300">
+            Kapcsolódva. Csomag: <span class="font-medium">{{ acc.plan.name }}</span>{% if acc.slots %},
+            {{ acc.slots }} párhuzamos letöltés{% endif %}.
+          </p>
+          <p class="mt-1 text-slate-400">
+            Egy letöltés mérethatára:
+            {% if acc.plan.max_download_gb %}{{ acc.plan.max_download_gb }} GB{% else %}ismeretlen{% endif %}.
+            Seedelés: {{ acc.seeding_label }}.
+          </p>
+        </div>
+        {% else %}
+        <div class="mt-4 rounded-lg border border-red-900/70 bg-red-950/40 p-3 text-xs">
+          <p class="font-medium text-red-300">A {{ provider.name }} nem válaszolt</p>
+          <p class="mt-1 font-mono text-red-400/80">{{ status.error }}</p>
+        </div>
+        {% endif %}
+        {% endif %}
+      </div>
+
+      <div class="p-5">
+        <label class="block text-sm">Seedelés
+          <select name="seed_preference"
+            class="mt-1.5 w-full rounded-md border border-slate-700 bg-slate-900 px-3 py-2 sm:w-64">
+            <option value="1" {% if cfg.seed_preference==1 %}selected{% endif %}>Döntse el a {{ provider.name }}
+            </option>
+            <option value="2" {% if cfg.seed_preference==2 %}selected{% endif %}>Mindig seedeljen</option>
+            <option value="3" {% if cfg.seed_preference==3 %}selected{% endif %}>Soha ne seedeljen</option>
+          </select>
+        </label>
+        <p class="mt-2 text-xs leading-relaxed text-slate-500">
+          A seedelés a TorBoxon Essential csomagon 24 óráig tart, Standardon 14, Pro-n 30 napig.
+          Ez kevésnek tűnhet, de a stremhu a saját letöltése után magától betartja a hit and run
+          szabályt, és a HnR kötelezettség a fiókodhoz és az adott torrenthez kötődik, nem az
+          egyes peerekhez.
+        </p>
+      </div>
+    </div>
+  </section>
+  {% endfor %}
+
+  <div class="flex justify-end border-t border-slate-800 pt-6">
+    <button class="rounded-md bg-indigo-600 px-5 py-2 text-sm font-medium hover:bg-indigo-500">Mentés</button>
+  </div>
+</form>
+
+<section class="mt-10">
+  <div class="mb-3 flex items-baseline justify-between">
+    <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-500">Futások</h2>
+    <span class="text-xs text-slate-500">{{ pushed }} torrent feltöltve eddig</span>
+  </div>
+
+  <div class="mb-4 rounded-xl border border-slate-800 bg-slate-900/40 p-4">
+    <form method="post" action="/run/sync_to_debrid">
+      <button class="rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-medium hover:bg-indigo-500
+        {% if JobName.SYNC_TO_DEBRID in running %}opacity-50{% endif %}">
+        {% if JobName.SYNC_TO_DEBRID in running %}Feltöltés folyamatban…{% else %}Feltöltés most{% endif %}
+      </button>
+    </form>
+  </div>
+
+  {% with run_label = 'Feltöltés', empty_text = 'Még nem futott le semmi. A feltöltés ' ~ cfg.push_interval_minutes ~ '
+  percenként indul.' %}
+  {% include "_runs.html" %}
+  {% endwith %}
+</section>
+
+<aside class="mt-10 rounded-xl border border-slate-800 bg-slate-900/30 p-5">
+  <h2 class="text-sm font-medium text-slate-300">Közösséggel való megosztás</h2>
+  <p class="mt-2 text-sm leading-relaxed text-slate-400">
+    Amit itt feltöltesz, az a <em>saját</em> debrid könyvtáradba kerül. A scraperek (Zilean, Comet
+    és társaik) nem olvassák közvetlenül a TorBoxot, így ettől még senki más nem fogja megtalálni
+    ezeket a torrenteket, te viszont igen, bármelyik eszközödről.
+  </p>
+  <p class="mt-2 text-sm leading-relaxed text-slate-400">
+    Ha azt szeretnéd, hogy a közösség is használni tudja, a hash-eket külön meg kell osztani:
+    <a href="/share" class="underline hover:text-slate-200">Megosztás</a>.
+  </p>
+</aside>
+
+{% endblock %}
