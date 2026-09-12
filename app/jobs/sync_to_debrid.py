@@ -15,6 +15,7 @@ class SyncToDebridJob(Job):
         services = self.store.debrid.all()
         if not services:
             result.error = "nincs beállítva debrid szolgáltatás"
+            self.log.warning("no debrid service configured")
             return
 
         conn = stremhu.connect(self.config.database_path)
@@ -23,9 +24,21 @@ class SyncToDebridJob(Job):
             candidates = stremhu.recent_playbacks(
                 conn, since_hours=self.config.lookback_hours
             )
+            self.log.info(
+                "playbacks collected",
+                extra={
+                    "candidates": len(candidates),
+                    "lookback_hours": self.config.lookback_hours,
+                    "providers": len(services),
+                },
+            )
             for row in services:
                 provider = debrids.get(row.provider)
                 if provider is None or row.api_key is None:
+                    self.log.warning(
+                        "skipping unusable debrid service",
+                        extra={"provider": row.provider},
+                    )
                     result.decide(
                         "",
                         "",
@@ -49,6 +62,10 @@ class SyncToDebridJob(Job):
         key = provider.key
         already = self.store.debrid.pushed_hashes(key)
         pending = [p for p in candidates if p.info_hash not in already]
+        self.log.info(
+            "pending playbacks for provider",
+            extra={"provider": key, "pending": len(pending), "seen": len(already)},
+        )
 
         try:
             async with provider.client(api_key) as client:
@@ -83,6 +100,14 @@ class SyncToDebridJob(Job):
                             blob, p.torrent_name, self.config.seed_preference
                         )
                     except TorboxError as e:
+                        self.log.warning(
+                            "add_torrent rejected",
+                            extra={
+                                "provider": key,
+                                "info_hash": p.info_hash,
+                                "error": str(e),
+                            },
+                        )
                         result.decide(
                             p.torrent_name, p.info_hash, Outcome.FAILED, str(e), key
                         )
@@ -99,6 +124,7 @@ class SyncToDebridJob(Job):
                         key,
                     )
         except Exception as e:
+            self.log.exception("provider push failed", extra={"provider": key})
             result.decide("", "", Outcome.FAILED, f"{type(e).__name__}: {e}", key)
 
     def _size_cap(self, account: Account) -> int | None:

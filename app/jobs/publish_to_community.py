@@ -10,6 +10,7 @@ class PublishToCommunityJob(Job):
         targets = self.store.community.all()
         if not targets:
             result.error = "nincs beállítva megosztási cél"
+            self.log.warning("no sharing target configured")
             return
 
         library = await self._library()
@@ -23,17 +24,30 @@ class PublishToCommunityJob(Job):
             for h, (name, size) in library.items()
             if h not in already
         ]
+        self.log.info(
+            "library scanned",
+            extra={
+                "library": len(library),
+                "already_published": len(already & library.keys()),
+                "new": len(new),
+                "targets": len(targets),
+            },
+        )
         if not new:
             return
 
         for row in targets:
             target = community_sharing.get(row.provider)
             if target is None:
+                self.log.warning(
+                    "unknown sharing target", extra={"provider": row.provider}
+                )
                 continue
             try:
                 async with target.client(row.api_key) as client:
                     url = await client.publish(new)
             except Exception as e:
+                self.log.exception("publish failed", extra={"provider": row.provider})
                 result.decide(
                     "", "", Outcome.FAILED, f"{type(e).__name__}: {e}", row.provider
                 )
@@ -41,6 +55,10 @@ class PublishToCommunityJob(Job):
 
             self.store.community.mark_published(
                 [(i.info_hash, i.filename) for i in new], url
+            )
+            self.log.info(
+                "published",
+                extra={"provider": row.provider, "items": len(new), "url": url},
             )
             for i in new:
                 result.decide(
