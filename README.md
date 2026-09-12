@@ -1,4 +1,8 @@
-# stremhu debrid sidecar
+<p align="center">
+  <img src="assets/logo.png" alt="stremhu debrid sidecar" width="320">
+</p>
+
+<h1 align="center">stremhu debrid sidecar</h1>
 
 A stremhu-debrid-sidecar szorosan a [stremhu-source](https://github.com/s4pp1/stremhu-source)-ra épül, és kettő háttérfolyamatot futtat:
 - a Stremhu által már letöltött torrenteket feltölti egy debrid szolgáltatóhoz, így legközelebbi lejátszáskor az már cache-ből történhet. Ez különösen hasznos season pack-eknél, ahol az első epizódot ugyan még Stremhu-ból játszod le, a második már cache-ből is tud érkezni.
