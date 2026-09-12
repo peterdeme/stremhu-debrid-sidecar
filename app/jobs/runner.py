@@ -81,6 +81,7 @@ class JobRunner:
                 IntervalTrigger(minutes=config.push_interval_minutes),
                 args=[JobName.SYNC_TO_DEBRID],
                 id=JobName.SYNC_TO_DEBRID,
+                name=JobName.SYNC_TO_DEBRID,
                 max_instances=1,
                 coalesce=True,
             )
@@ -90,6 +91,7 @@ class JobRunner:
                 IntervalTrigger(hours=config.effective_publish_interval_hours),
                 args=[JobName.PUBLISH_TO_COMMUNITY],
                 id=JobName.PUBLISH_TO_COMMUNITY,
+                name=JobName.PUBLISH_TO_COMMUNITY,
                 max_instances=1,
                 coalesce=True,
             )
