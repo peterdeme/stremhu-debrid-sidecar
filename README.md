@@ -24,7 +24,7 @@ flowchart LR
     job -- ".torrent feltöltés" --> debrid
 ```
 
-## Közösség felé szinkronizáló job
+## (Opcionális) közösség felé szinkronizáló job
 
 ```mermaid
 flowchart LR
