@@ -1,3 +1,4 @@
+import logging
 import time
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -20,20 +21,27 @@ class JobRunner:
         self.store = store
         self.statuses = statuses
         self.running: set[str] = set()
+        self.log = logging.getLogger(__name__)
 
     def start(self) -> None:
         self.reschedule()
         self.scheduler.start()
+        self.log.info("scheduler started")
 
     def stop(self) -> None:
         self.scheduler.shutdown(wait=False)
+        self.log.info("scheduler stopped")
 
     def runs_for(self, job: JobName) -> list[RunResult]:
         return self.store.runs.history(job, MAX_RUNS_KEPT)
 
     async def run(self, name: str) -> RunResult | None:
         job = get(name)
-        if job is None or name in self.running:
+        if job is None:
+            self.log.warning("unknown job requested", extra={"job": name})
+            return None
+        if name in self.running:
+            self.log.info("job already running, skipping", extra={"job": name})
             return None
         self.running.add(name)
         try:
@@ -58,6 +66,15 @@ class JobRunner:
     def reschedule(self) -> None:
         config = load_config(self.store)
         self.scheduler.remove_all_jobs()
+        self.log.info(
+            "scheduling jobs",
+            extra={
+                "push_enabled": config.push_enabled,
+                "push_interval_minutes": config.push_interval_minutes,
+                "publish_enabled": config.publish_enabled,
+                "publish_interval_hours": config.effective_publish_interval_hours,
+            },
+        )
         if config.push_enabled:
             self.scheduler.add_job(
                 self.run,

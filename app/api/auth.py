@@ -1,4 +1,5 @@
 import hmac
+import logging
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Form, Request
@@ -10,6 +11,8 @@ from .dependencies import singleton
 from .sessions import Sessions
 from .templating import templates
 
+log = logging.getLogger(__name__)
+
 
 class NotAuthenticated(Exception):
     pass
@@ -17,7 +20,10 @@ class NotAuthenticated(Exception):
 
 def ensure_admin_password(store: Store) -> None:
     if passwords.env_password():
-        print(f"admin password taken from ${passwords.ENV_VAR}", flush=True)
+        log.info(
+            "admin password taken from environment",
+            extra={"env_var": passwords.ENV_VAR},
+        )
         return
     if store.auth.credentials() is not None:
         return
