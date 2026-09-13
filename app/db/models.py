@@ -13,7 +13,7 @@ class ServiceRow:
     created_at: float
 
     @classmethod
-    def from_row(cls, row: sqlite3.Row) -> "ServiceRow":
+    def from_row(cls, row: sqlite3.Row) -> ServiceRow:
         return cls(
             id=row["id"],
             provider=row["provider"],
@@ -30,7 +30,7 @@ class Credentials:
     created_at: float
 
     @classmethod
-    def from_row(cls, row: sqlite3.Row) -> "Credentials":
+    def from_row(cls, row: sqlite3.Row) -> Credentials:
         return cls(
             password_hash=row["password_hash"],
             salt=row["salt"],

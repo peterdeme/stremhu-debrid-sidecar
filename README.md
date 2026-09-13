@@ -1,24 +1,36 @@
-<p align="center">
-  <img src="assets/logo.png" alt="stremhu debrid sidecar" width="320">
-</p>
+<div align="center">
 
-<h1 align="center">stremhu debrid sidecar</h1>
+<img src="assets/logo.png" alt="Stremhu debrid sidecar" width="320">
 
-A stremhu-debrid-sidecar szorosan a [stremhu-source](https://github.com/s4pp1/stremhu-source)-ra épül, és kettő háttérfolyamatot futtat:
-- a Stremhu által már letöltött torrenteket feltölti egy debrid szolgáltatóhoz, így legközelebbi lejátszáskor az már cache-ből történhet. Ez különösen hasznos season pack-eknél, ahol az első epizódot ugyan még Stremhu-ból játszod le, a második már cache-ből is tud érkezni.
-- opcionálisan, a debrid-en cachelt torrenteket közzé is tudja tenni, hogy mások is elérhessék
+# Stremhu debrid sidecar
 
-A Stremhu adatbázisát kell felcsatolni Docker volume-ként, így abból közvetlen kiolvasva látja a nemrég lejátszott médiát.
+A Stremhu debrid sidecar figyeli, mit játszottál le [Stremhu](https://github.com/s4pp1/Stremhu-source)-val, és feltölti
+a debrid szolgáltatódhoz, hogy az legközelebb már cache-ből indulhasson. Emellett akár megoszthatod a debrid könyvtárat tartalmát a közösséggel is.
 
-## Debrid szinkronizációs job
+[![ci](https://github.com/peterdeme/Stremhu-debrid-sidecar/actions/workflows/ci.yaml/badge.svg)](https://github.com/peterdeme/Stremhu-debrid-sidecar/actions/workflows/ci.yaml)
+[![lint](https://github.com/peterdeme/Stremhu-debrid-sidecar/actions/workflows/lint.yaml/badge.svg)](https://github.com/peterdeme/Stremhu-debrid-sidecar/actions/workflows/lint.yaml)
+[![Python](https://img.shields.io/badge/Python-3.14+-3776AB?logo=python&logoColor=white)](https://www.python.org)
+[![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue)](LICENSE)
+
+</div>
+
+---
+
+## ✨ Mit csinál
+
+- **Debrid szolgáltatóhoz feltöltés.** A Stremhuval lejátszott torrentek felkerülnek a debrid fiókodba, így azt mások is tudják hasznosítani.
+- **Season pack-eknél a legjobb.** Az első epizódot még Stremhuból nézed, a másodikat már akár cache-ből is.
+- **Közösségi megosztás (opcionális).** A debrid fiókodban cache-elt hash-eket közzéteszi a Debrid Media Managerben, hogy másoknak is elérhetővé váljanak.
+
+## 🔄 Debrid szinkronizációs job
 
 ```mermaid
 flowchart LR
-    subgraph stremhu
+    subgraph Stremhu
         db[("SQLite")]
     end
 
-    subgraph sidecar["stremhu debrid sidecar"]
+    subgraph sidecar["Stremhu debrid sidecar"]
         job["sync job"]
     end
 
@@ -28,13 +40,17 @@ flowchart LR
     job -- ".torrent feltöltés" --> debrid
 ```
 
-## (Opcionális) közösség felé szinkronizáló job
+A Stremhu debrid sidecar bizonyos időközönként beleolvas a Stremhu SQLite adatbázisába, és feltölti az ott talált torrenteket a debrid szolgáltatódhoz.
+
+> Be lehet állítani, hogy milyen feltételek teljesülésekor történjen meg a feltöltés. Például ha csak pár másodpercet játszottál egy torrentből, akkor a feltöltés elkerülhető.
+
+## 🌍 Közösség felé szinkronizáló job (opcionális)
 
 ```mermaid
 flowchart LR
     debrid["Debrid szolgáltató"]
 
-    subgraph sidecar["stremhu debrid sidecar"]
+    subgraph sidecar["Stremhu debrid sidecar"]
         job["publish job"]
     end
 
@@ -42,9 +58,9 @@ flowchart LR
     job -- "új hash-ek" --> dmm
 ```
 
-A `dmm` adatbázist pedig többek közt a Zilean és a Comet is olvassa, így mindenki számára elérhetővé válik.
+A `dmm` adatbázist többek közt a Zilean és a Comet is olvassa, így mindenki számára elérhetővé válik.
 
-## Elindítás
+## 🏁 Elindítás
 
 ```yaml
 services:
@@ -69,34 +85,32 @@ Ezután nyisd meg a `http://localhost:8000` címet, és add meg a debrid API kul
 jelszót az első indításkor generáljuk és kiírjuk a logba (`docker compose logs`), vagy megadhatod
 az `ADMIN_PASSWORD` környezeti változóval is.
 
+> [!WARNING]
 > A port szándékosan a `127.0.0.1` címre van kötve: a webes felület csak a beállításokhoz kell,
-az ütemezett feladatok attól függetlenül futnak, hogy eléri-e valaki. Ne tedd ki az internetre.
-Ha végeztél a beállítással, a `ports` blokk akár teljesen el is hagyható, a sidecar ugyanúgy
-működik tovább.
+> az ütemezett feladatok attól függetlenül futnak, hogy eléri-e valaki. Ne tedd ki az internetre.
+> Ha végeztél a beállítással, a `ports` blokk akár teljesen el is hagyható, a sidecar ugyanúgy
+> működik tovább.
 
 
-## Fejlesztés
+## 🛠 Fejlesztés
 
 ```sh
 python -m venv .venv && .venv/bin/pip install -e .
 .venv/bin/uvicorn app.main:app --reload
 ```
 
-A konténer a stremhu időzónáját várja, mert a stremhu naiv, helyi idejű időbélyegeket ír.
-Ha a két konténer időzónája eltér, a szinkronizációs ablak elcsúszhat.
-
-## Jogi nyilatkozat
+## ⚖️ Jogi nyilatkozat
 
 Ez az eszköz nem keres, nem indexel és nem szolgáltat tartalmat. Kizárólag azokat a
-torrenteket mozgatja a saját debrid fiókodba, amelyeket a stremhuval már lejátszottál,
+torrenteket mozgatja a saját debrid fiókodba, amelyeket a Stremhuval már lejátszottál,
 a saját gépeden, a saját fiókjaiddal, a saját trackereiddel.
 
 Azért, hogy mit töltesz le és mit teszel közzé, te felelsz. A szerzői jogi szabályok
 országonként eltérnek, a privát trackerek szabályzata pedig külön köt. **Szerzői joggal védett
 tartalom jogosulatlan letöltését vagy terjesztését a projekt nem támogatja.**
 
-A projekt nem áll kapcsolatban semmilyen tracker-rel, stremhuval, debrid szolgáltatóval és a Debrid Media Manager-rel sem.
+---
 
-## Licenc
-
-AGPL-3.0
+<div align="center">
+<a href="LICENSE">AGPL-3.0 licenc</a>. A projekt nem áll kapcsolatban semmilyen trackerrel, a Stremhuval, debrid szolgáltatókkal és a Debrid Media Managerrel sem.
+</div>

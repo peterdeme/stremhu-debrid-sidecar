@@ -132,7 +132,7 @@ def _info_span(data: bytes) -> tuple[int, int] | None:
     start = i + len(b"4:info")
     try:
         _, end = bdecode(data, start)
-    except (ValueError, IndexError, KeyError):
+    except ValueError, IndexError, KeyError:
         return None
     return start, end
 
@@ -150,7 +150,7 @@ def _info_dict(blob: bytes) -> dict | None:
         return None
     try:
         info, _ = bdecode(blob, span[0])
-    except (ValueError, IndexError, KeyError):
+    except ValueError, IndexError, KeyError:
         return None
     return info if isinstance(info, dict) else None
 
@@ -163,7 +163,7 @@ def total_size(blob: bytes) -> int | None:
         if b"length" in info:
             return info[b"length"]
         return sum(f.get(b"length", 0) for f in info.get(b"files", []) or [])
-    except (AttributeError, TypeError):
+    except AttributeError, TypeError:
         return None
 
 
@@ -188,7 +188,7 @@ def fetched_fraction(
         else:
             path = downloads / name
             declared = info[b"length"]
-    except (KeyError, AttributeError, TypeError):
+    except KeyError, AttributeError, TypeError:
         return None
 
     if not declared:

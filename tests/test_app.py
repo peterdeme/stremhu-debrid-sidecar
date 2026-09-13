@@ -82,8 +82,16 @@ def test_migrations_apply_from_scratch_and_survive_a_half_applied_one(tmp_path):
             "select name from sqlite_master where type='table' and name not like 'sqlite_%'"
         )
     }
-    assert {"settings", "admin_credentials", "debrids", "sharing", "pushed",
-            "published", "runs", "decisions"} <= tables
+    assert {
+        "settings",
+        "admin_credentials",
+        "debrids",
+        "sharing",
+        "pushed",
+        "published",
+        "runs",
+        "decisions",
+    } <= tables
 
 
 def test_info_hash_of_a_real_torrent_and_of_rubbish():
