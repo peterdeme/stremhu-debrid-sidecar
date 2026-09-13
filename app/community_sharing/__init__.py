@@ -27,5 +27,5 @@ TARGETS: dict[CommunitySharingProvider, Target] = {
 def get(key: str) -> Target | None:
     try:
         return TARGETS[CommunitySharingProvider(key)]
-    except (KeyError, ValueError):
+    except KeyError, ValueError:
         return None

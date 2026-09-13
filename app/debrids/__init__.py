@@ -28,5 +28,5 @@ DEBRIDS: dict[DebridProvider, Debrid] = {
 def get(key: str) -> Debrid | None:
     try:
         return DEBRIDS[DebridProvider(key)]
-    except (KeyError, ValueError):
+    except KeyError, ValueError:
         return None

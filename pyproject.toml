@@ -1,8 +1,8 @@
 [project]
 name = "stremhu-debrid-sidecar"
-version = "0.2.0"
+version = "0.2.1"
 description = "Push what you watched in stremhu into your debrid cache, and share the hashes with others"
-requires-python = ">=3.13"
+requires-python = ">=3.14"
 license = "AGPL-3.0-only"
 license-files = ["LICENSE"]
 dependencies = [

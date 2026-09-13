@@ -14,5 +14,5 @@ JOBS: dict[JobName, type[Job]] = {
 def get(name: str) -> type[Job] | None:
     try:
         return JOBS[JobName(name)]
-    except (KeyError, ValueError):
+    except KeyError, ValueError:
         return None
