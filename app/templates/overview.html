@@ -17,7 +17,7 @@
       és azokat a torrenteket feltölti a debrid fiókodba, hogy a második megtekintés már
       azonnali legyen, bármelyik eszközödön. Ugyan ez filmeknél kevésbé hasznos, de sorozat évadok esetében, ha megnézed
       az első részt Stremhu-ról, az évad maradék részét már akár debrid-ről is tudod nézni, hisz a háttérben letöltődött
-      oda is.
+      oda is. Ehhez viszont ki kell kapcsolnod a lejátszóban a binge group-ot, lásd lentebb.
     </p>
     <p class="mt-3 text-sm leading-relaxed text-slate-400">
       Debrid szolgáltatóknál a könyvtárad kizárólag számodra elérhető, és csak bizonyos ideig (általában 30 nap).
@@ -28,6 +28,28 @@
     <p class="mt-3 text-sm leading-relaxed text-slate-500">
       A debrid sidecar a Stremhu SQLite adatbázisából olvassa ki a nemrégiben lejátszott
       torrenteket.
+    </p>
+  </div>
+</details>
+
+<details class="group mb-4 overflow-hidden rounded-xl border border-slate-800 bg-slate-900/40">
+  <summary
+    class="flex cursor-pointer select-none list-none items-center gap-2 border-b border-slate-800 bg-slate-900/60 px-5 py-3 text-sm font-medium marker:content-none">
+    <span class="text-base leading-none text-slate-100 group-open:hidden">▸</span><span
+      class="hidden text-base leading-none text-slate-100 group-open:inline">▾</span>
+    Kapcsold ki a Binge Group-ot a lejátszóban
+  </summary>
+  <div class="p-5">
+    <p class="text-sm leading-relaxed text-slate-400">
+      A lejátszók többsége, például a Stremio és a Nuvio, megjegyzi, melyik forrásból indítottad
+      az évad első részét, és a következő részeket automatikusan ugyanonnan próbálja betölteni.
+      Ezt hívják binge group-nak.
+    </p>
+    <p class="mt-3 text-sm leading-relaxed text-slate-400">
+      Ez pont azt akadályozza meg, amiért a sidecar van: ha az első részt a stremhu-source
+      játszotta le, a többi rész is onnan jön, és a debridben már ott lévő, azonnal induló másolat
+      szóba sem kerül. Kapcsold ki a lejátszó beállításaiban, hogy minden rész egy friss találati
+      listájából válasszon.
     </p>
   </div>
 </details>
