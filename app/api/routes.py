@@ -99,12 +99,14 @@ def get_router(
         push_interval_minutes: Annotated[int, Form()] = 15,
         lookback_hours: Annotated[int, Form()] = 48,
         min_fetched_percent: Annotated[float, Form()] = 50,
+        require_scene_format: Annotated[bool, Form()] = False,
         seed_preference: Annotated[int, Form()] = SeedPreference.ALWAYS,
     ):
         config.push_enabled = push_enabled
         config.push_interval_minutes = max(1, push_interval_minutes)
         config.lookback_hours = max(1, lookback_hours)
         config.min_fetched_fraction = min(max(min_fetched_percent / 100, 0.0), 1.0)
+        config.require_scene_format = require_scene_format
         config.seed_preference = (
             seed_preference
             if seed_preference in set(SeedPreference)

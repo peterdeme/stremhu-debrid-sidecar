@@ -102,6 +102,32 @@
           elindítottál és rögtön otthagytál.
         </p>
       </div>
+
+      <div class="p-5">
+        <label class="flex items-center gap-2 text-sm">
+          <input type="checkbox" name="require_scene_format" value="true" {% if cfg.require_scene_format %}checked{%
+            endif %} class="rounded border-slate-700 bg-slate-900">
+          Csak scene formátumú torrentek
+        </label>
+        <p class="mt-2 text-xs leading-relaxed text-slate-500">
+          A scraperek, a szűrők és az addonok a torrent nevéből olvassák ki a tulajdonságait: a
+          kép- és hangjelöléseket (<code class="text-slate-400">DV</code>,
+          <code class="text-slate-400">Atmos</code>), a minőséget
+          (<code class="text-slate-400">REMUX</code>,
+          <code class="text-slate-400">WEB-DL</code>) és a nyelveket
+          (<code class="text-slate-400">HUN</code>, <code class="text-slate-400">ENG</code>). A
+          rosszul elnevezett torrentek emiatt gyakran felfedezhetetlenek maradnak egyes
+          scrapereknek, vagy a szűrők dobják el őket: ha nincs a névben
+          <code class="text-slate-400">HUN</code>, akkor nem magyar nyelvűnek számít.
+        </p>
+        <p class="mt-2 text-xs leading-relaxed text-slate-500">
+          Ez a beállítás legjobb tudása szerint eldönti a névről, hogy scene formátumú-e, és csak
+          az ilyeneket tölti fel. Nem tévedhetetlen, a névből nem mindig derül ki egyértelműen,
+          és ilyenkor inkább kihagyja a torrentet. Az elemzéshez a
+          <a href="https://github.com/dreulavelle/PTT" class="underline hover:text-slate-300">PTT</a>
+          könyvtárat használjuk.
+        </p>
+      </div>
     </div>
   </section>
 

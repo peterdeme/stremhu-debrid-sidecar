@@ -1,0 +1,94 @@
+# Torrent names in the shapes a real run produces, one per line.
+#
+# "+" means the name is treated as scene formatted, "-" means it is rejected
+# when the filter is on. Every name here is invented; only the structure is
+# taken from real data, and that is the part under test.
+#
+# When a parser upgrade flips a verdict, decide which side was right rather
+# than re-blessing the file.
+
+# --- dotted scene names, the canonical shape ---------------------------------
++ Harbour.Lights.S01.1080p.AMZN.WEB-DL.DDP5.1.H.264.HUN.ENG-QVTX
++ Harbour.Lights.S01E04.1080p.AMZN.WEB-DL.DDP5.1.Atmos.H.264.HUN.ENG-QVTX
++ The.Glass.Orchard.2019.2160p.UHD.BluRay.REMUX.DV.HDR.HEVC.DTS-HD.MA.5.1-NULLCAST
++ Paper.Lanterns.2021.1080p.BluRay.REMUX.AVC.DTS-HD.MA.5.1-PIXELRAVEN
++ Silent.Quarry.2023.REPACK.2160p.MA.WEB-DL.DDP5.1.Atmos.DV.HDR.H.265-TROVE
++ Cold.Harbour.Road.S02E03-04.2160p.WEB-DL.ITA.ENG.DDP5.1.Atmos.DV.HDR.H.265-m4rble
++ Vasvirag.S03.720p.HDTV.x264.HUN-KOVAKS
++ Nine.Tin.Soldiers.(2017).Theatrical.Cut.2160p.UHD.Blu-ray.Remux.HEVC.DTS-HD.MA.5.1-ArcLamp
++ The.Rusty.Gate.1972.Special.Edition.REPACK.UHD.BluRay.2160p.TrueHD.Atmos.7.1-NULLCAST
+
+# --- container extension trailing the group ----------------------------------
++ Harbour.Lights.S01E05.1080p.AMZN.WEB-DL.DDP5.1.H.264.HUN.ENG-QVTX.mkv
++ Ferrymen.2020.Hybrid.2160p.UHD.Blu-ray.Remux.DV.HDR10P.HEVC.TrueHD.7.1-BRINEHD.mkv
+
+# --- separators flattened to spaces upstream ---------------------------------
+# The first version of this filter demanded dots and threw all of these away,
+# which is most of why it was replaced. Note the "DDP5 1" and "7 1".
++ The Glass Orchard 2019 UHD BluRay 2160p TrueHD Atmos 7 1 DV HEVC REMUX-NULLCAST
++ Silent Quarry 2023 2160p NF WEB-DL DDP5 1 Atmos DV HDR H 265-TROVE
++ Paper Lanterns 2021 1080p ATVP WEB-DL DD 5 1 Atmos H 264-ArcLamp
++ Cold Harbour Road S02 1080p ATVP WEB-DL DDP5 1 Atmos H 264-m4rble
++ Nine Tin Soldiers 2017 IMAX UHD BluRay 1080p DD Atmos 5 1 DoVi HDR10 x265-VX412
+
+# --- numeric and lowercase group tags ----------------------------------------
++ Moth.and.Flame.2018.1080p.BluRay.DDP.7.1.x264-VX412
++ Ferrymen.2020.1080p.WEBRip.SDR.10Bit.DDP7.1.HEVC-w1ndrow
+
+# --- indexer tags stapled on, which used to hide the group -------------------
++ [Torrindex.to] The.Rusty.Gate.2016.2160p.BluRay.x265.10bit.HDR.TrueHD.7.1.Atmos-NULLCAST
++ [torrindex.to] Paper.Lanterns.2021.UHD.BluRay.2160p.TrueHD.Atmos.7.1.DV.HEVC.REMUX-BRINEHD.mkv
++ Silent Quarry S01E01 A Quiet Road 2160p WEB-DL DDP5 1 Atmos DV HDR10Plus H 265-TROVE [ Seedhive.org ]
++ www.Seedhive.org    -    Harbour Lights S03E03 1080p WEB-DL DDP5 1 Atmos H 264-QVTX
+
+# --- known miss: a group behind an audio codec -------------------------------
+# "DTS-hexen" parses as the DTS codec, so the group is lost and a real release
+# is rejected. Left as-is rather than worked around; it belongs upstream.
+- Moth.and.Flame.2018.PROPER.1080p.BluRay.x264.DTS-hexen
+
+# --- spaces and no group, the shape that started this ------------------------
+- Nine Tin Soldiers S01-04 + TFB 1080p
+- Vasvirag S15 720p
+- A Rozsdás Kapu 1080i
+- A Rozsdás Kapu 1080i.mkv
+
+# --- nothing but an infohash -------------------------------------------------
+- 4f1b9c02ae77d3418a6e5b0cd92f3714e8a06b5d
+- b30e7741cc9052f8ab16d4e3907caa58d1f62e94
+
+# --- bare slugs --------------------------------------------------------------
+- harbourlights2
+- the_rusty_gate
+- T_RUSTY_GATE_1972_UHD_HDR_DV_RMX
+
+# --- collections and packs with no release info ------------------------------
+- Paper Lanterns Collection 4K Remux
+- The Glass Orchard. Trilogy (2016-2021) BDRemux 1080p [Remastered]
+
+# --- dotted but groupless ----------------------------------------------------
+- Moth.and.Flame.2018.1080p.WEB-DL.DDP5.1.H.264.mkv
+- Ferrymen.2020.1080p.AMZN.WEB-DL.DDP5.1.H.264
+- Cold.Harbour.Road.S01.2160p.WEB-DL.HLG.H.265
+- Silent.Quarry.2023.1080p.REMUX.ENG.HUN.POL.ITA.TUR.CZE
+
+# --- bracket-heavy repack styles ---------------------------------------------
+- Harbour Lights (2019) [2160p] [4K] [BluRay] [5.1] [RLSA.MX]
+- The Rusty Gate (2016) [Bluray 1080p][Esp]
+- Paper Lanterns (2021) (1080p DS4K BluRay x265 10-bit SDR AAC 5.1)
+
+# --- anime bracket style -----------------------------------------------------
+- [FakeSubs] Moth and Flame - 01 [1080p]
+- [FakeSubs] Vasvirag - 12 [720p][AAC]
+
+# --- truncated by whatever produced the name ---------------------------------
+- Cold Harbour Road S02E08 2025 2160p WEB-DL DDP5 1 Atmos DV H
+- Silent Quarry S01E10 The Long Way Down 2160p WEB-DL
+
+# --- trailing uploader chatter rather than a group tag -----------------------
+- Ferrymen 2020 1080p BluRay x265 HEVC 10bit AAC 7 1 rip by someone
+- Nine Tin Soldiers 2017 1080p BluRay REMUX AVC DTS HD MA 5 1 reupload
+
+# --- multi-title, multi-script listings --------------------------------------
+- Ржавые ворота  The Rusty Gate  Сезон 1-3 [2016-2021, WEB-DLRip] MVO
+- 【发布组】玻璃果园[中英字幕].The.Glass.Orchard.2019.1080p.Bluray
+- 유리 과수원 glass orchard (2019) 1080p WEB

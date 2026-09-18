@@ -1,9 +1,11 @@
-"""Six tests, picked by what has actually broken rather than by coverage."""
+"""Eight tests, picked by what has actually broken rather than by coverage."""
+
+from pathlib import Path
 
 import pytest
 
 from app import config as config_module
-from app import db, stremhu
+from app import db, filters, stremhu
 from app.lzstring import compress_to_encoded_uri_component
 
 PAGES = ["/", "/sync", "/share"]
@@ -37,12 +39,14 @@ def test_settings_round_trip(client, store):
             "push_interval_minutes": "25",
             "lookback_hours": "72",
             "min_fetched_percent": "40",
+            "require_scene_format": "true",
             "seed_preference": "3",
         },
     )
     cfg = config_module.load(store)
     assert (cfg.push_interval_minutes, cfg.lookback_hours) == (25, 72)
     assert cfg.min_fetched_fraction == 0.4
+    assert cfg.require_scene_format is True
     assert cfg.push_enabled is False  # unchecked box is absent from the post
 
     # The publish interval is clamped in code, not merely asked for in the UI.
@@ -118,3 +122,34 @@ def test_lzstring_matches_the_reference_implementation():
         assert compress_to_encoded_uri_component(text) == (
             reference.compressToEncodedURIComponent(text)
         )
+
+
+CORPUS = Path(__file__).parent / "data" / "torrent_names.txt"
+
+
+def _corpus():
+    for line in CORPUS.read_text().splitlines():
+        if line.startswith(("+ ", "- ")):
+            yield line[2:], line[0] == "+"
+
+
+@pytest.mark.parametrize("name, expected", list(_corpus()), ids=lambda v: None)
+def test_scene_format_detection(name, expected):
+    """One case per naming shape a real run throws at this. The first version
+    of the filter looked right on a handful of invented examples and then threw
+    away half of an actual run - every well-formed release whose dots had been
+    flattened to spaces somewhere upstream - so the shapes are what matter, and
+    the names carrying them are made up."""
+    assert filters.is_scene_formatted(name) is expected
+
+
+def test_site_tags_do_not_hide_the_release_group():
+    """Indexers staple their name onto both ends, and a trailing one reads as
+    the release group, which is how five good releases got rejected."""
+    assert filters.is_scene_formatted(
+        "Silent Quarry S01E01 A Quiet Road 2160p WEB-DL DDP5 1 Atmos H 265-TROVE [ Seedhive.org ]"
+    )
+    assert filters.is_scene_formatted(
+        "[Torrindex.to] The.Rusty.Gate.2016.2160p.BluRay.x265.10bit.HDR.TrueHD.7.1.Atmos-NULLCAST"
+    )
+    assert not filters.is_scene_formatted("")

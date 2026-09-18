@@ -16,6 +16,7 @@ class Outcome(str, Enum):
     ALREADY_PUSHED = "already pushed"
     TOO_BIG = "over size limit"
     BARELY_WATCHED = "barely watched"
+    NOT_SCENE_FORMAT = "not scene formatted"
     NO_FILE = "file no longer on disk"
     NO_TORRENT = "torrent no longer stored"
     HASH_MISMATCH = "hash mismatch"
