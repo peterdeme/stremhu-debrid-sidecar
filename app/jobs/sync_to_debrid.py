@@ -1,6 +1,6 @@
 import sqlite3
 
-from .. import debrids, stremhu
+from .. import debrids, filters, stremhu
 from ..debrids import Debrid
 from ..debrids.torbox import TorboxError
 from ..models import Account, Decision, JobName, Outcome, RunResult
@@ -150,6 +150,13 @@ class SyncToDebridJob(Job):
         if computed != p.info_hash:
             return Decision(
                 p.torrent_name, p.info_hash, Outcome.HASH_MISMATCH, computed, key
+            )
+
+        if self.config.require_scene_format and not filters.is_scene_formatted(
+            p.torrent_name
+        ):
+            return Decision(
+                p.torrent_name, p.info_hash, Outcome.NOT_SCENE_FORMAT, "", key
             )
 
         if self.config.min_fetched_fraction > 0:

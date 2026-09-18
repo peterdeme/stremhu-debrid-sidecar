@@ -17,6 +17,7 @@ class Config:
     push_interval_minutes: int = 15
     lookback_hours: int = 48
     min_fetched_fraction: float = 0.5
+    require_scene_format: bool = False
     seed_preference: int = SeedPreference.ALWAYS
 
     push_limit: int = 10
