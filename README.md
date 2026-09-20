@@ -46,19 +46,27 @@ A Stremhu debrid sidecar bizonyos időközönként beleolvas a Stremhu SQLite ad
 
 ## 🌍 Közösség felé szinkronizáló job (opcionális)
 
+A fenti szinkonizációs job a te _személyes_ debrid könyvtáradba tölti fel a torrenteket, így számodra azonnal elérhetővé válik. Ez tipikusan pár napig érhető el (például TorBox-on ez [30 nap](https://support.torbox.app/en/articles/9961332-how-long-are-torbox-files-stored-for)).
+
+Ahhoz, hogy igazán hasznosulni is tudjon a tartalom, a hash-eket közzé tudod tenni egy úgy nevezett nyilvános hash listában. A hash listák lehetővé teszik, hogy mások is hozzáférjenek a már feltöltött tartalmakhoz. Minden egyes új hozzáférés kibővíti a file elérhetőségét - minél több elérés érkezik, annál tovább tartja meg a tartalmat adebrid szolgáltató.
+
+> Nevéhez hűen, a hash lista két dolgot tartalmaz: egy torrent file nevét, és annak a hash-ét. A scraper-ek ilyen kevés adat már elegendő ahhoz, hogy a megfelelő tartalmat beazonosítsák.
+
 ```mermaid
 flowchart LR
-    debrid["Debrid szolgáltató"]
+    debrid["Debrid könyvtárad"]
 
     subgraph sidecar["Stremhu debrid sidecar"]
         job["publish job"]
     end
 
+    dmm["DMM hash lista"]
+
     debrid -- "könyvtár lekérdezés" --> job
-    job -- "új hash-ek" --> dmm
+    job -- "hash lista" --> dmm
 ```
 
-A [`dmm` adatbázist](https://github.com/debridmediamanager/hashlists) többek közt a [Zilean](https://github.com/iPromKnight/zilean/blob/8bfd20d49deda5e263a06476b47176d2a876a200/src/Zilean.Scraper/Features/Ingestion/Dmm/DmmFileDownloader.cs), a [Comet](https://github.com/g0ldyy/comet/blob/f56677f05ed9a158f9a0338ad2f44d8efde35969/comet/services/dmm_ingester.py), a [StremThru Torz](https://github.com/MunifTanjim/stremthru/blob/82e9d782c0e134f37f87fb6267426d28e714128f/internal/worker/sync_dmm_hashlist.go) és a [MediaFusion](https://github.com/mhdzumair/MediaFusion/blob/f48113e53daf66d62afec377907dfef0dce32b84/backend/src/jobs/handlers/dmm_hashlist.rs) is olvassa, így mindenki számára elérhetővé válik.
+A [`dmm` adatbázist](https://github.com/debridmediamanager/hashlists) többek közt a Zilean ([`DmmFileDownloader.cs`](https://github.com/iPromKnight/zilean/blob/8bfd20d49deda5e263a06476b47176d2a876a200/src/Zilean.Scraper/Features/Ingestion/Dmm/DmmFileDownloader.cs)), a Comet ([`dmm_ingester.py`](https://github.com/g0ldyy/comet/blob/f56677f05ed9a158f9a0338ad2f44d8efde35969/comet/services/dmm_ingester.py)), a StremThru Torz ([`sync_dmm_hashlist.go`](https://github.com/MunifTanjim/stremthru/blob/82e9d782c0e134f37f87fb6267426d28e714128f/internal/worker/sync_dmm_hashlist.go)) és a MediaFusion ([`dmm_hashlist.rs`](https://github.com/mhdzumair/MediaFusion/blob/f48113e53daf66d62afec377907dfef0dce32b84/backend/src/jobs/handlers/dmm_hashlist.rs)) is olvassa, így ezek felhasználóinak automatikusan elérhetővé válik.
 
 > [!NOTE]
 > Egy hash listában a fájlnév az egyetlen metaadat, amiből a scraperek dolgozni tudnak. Ha a
