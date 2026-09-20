@@ -58,7 +58,12 @@ flowchart LR
     job -- "új hash-ek" --> dmm
 ```
 
-A `dmm` adatbázist többek közt a Zilean és a Comet is olvassa, így mindenki számára elérhetővé válik.
+A [`dmm` adatbázist](https://github.com/debridmediamanager/hashlists) többek közt a [Zilean](https://github.com/iPromKnight/zilean/blob/8bfd20d49deda5e263a06476b47176d2a876a200/src/Zilean.Scraper/Features/Ingestion/Dmm/DmmFileDownloader.cs), a [Comet](https://github.com/g0ldyy/comet/blob/f56677f05ed9a158f9a0338ad2f44d8efde35969/comet/services/dmm_ingester.py), a [StremThru Torz](https://github.com/MunifTanjim/stremthru/blob/82e9d782c0e134f37f87fb6267426d28e714128f/internal/worker/sync_dmm_hashlist.go) és a [MediaFusion](https://github.com/mhdzumair/MediaFusion/blob/f48113e53daf66d62afec377907dfef0dce32b84/backend/src/jobs/handlers/dmm_hashlist.rs) is olvassa, így mindenki számára elérhetővé válik.
+
+> [!NOTE]
+> Egy hash listában a fájlnév az egyetlen metaadat, amiből a scraperek dolgozni tudnak. Ha a
+> név hiányos, például nincs benne az évszám, a hash ugyan bekerül az adatbázisba, de rossz filmhez vagy sorozathoz
+> társul, és a keresőkben nem jön elő.
 
 ## 🏁 Elindítás
 
