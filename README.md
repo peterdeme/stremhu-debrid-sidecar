@@ -81,6 +81,8 @@ services:
       - ./stremhu-data/downloads:/stremhu/downloads:ro
 ```
 
+> Az adatbázis könyvtára nem lehet csak olvasható (`:ro`): az SQLite a [write-ahead napló](https://www.sqlite.org/wal.html) (WAL) olvasásához létrehoz egy `-shm` fájlt a db mellé. Magába az adatbázisba nem írunk.
+
 Ezután nyisd meg a `http://localhost:8000` címet, és add meg a debrid API kulcsodat. A belépési
 jelszót az első indításkor generáljuk és kiírjuk a logba (`docker compose logs`), vagy megadhatod
 az `ADMIN_PASSWORD` környezeti változóval is.
