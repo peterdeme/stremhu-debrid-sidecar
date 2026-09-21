@@ -3,9 +3,18 @@ import sqlite3
 from .. import debrids, filters, stremhu
 from ..debrids import Debrid
 from ..debrids.torbox import TorboxError
+from ..filters import Marker
 from ..models import Account, Decision, JobName, Outcome, RunResult
 from ..stremhu import Playback
 from .base import Job
+
+# Reported one at a time, worst first: the group is what makes a name readable
+# at all, and a name that fails there usually fails the rest too.
+_MARKER_OUTCOMES = {
+    Marker.GROUP: Outcome.NOT_SCENE_FORMAT,
+    Marker.RESOLUTION: Outcome.NO_RESOLUTION,
+    Marker.LANGUAGE: Outcome.NO_LANGUAGE_TAG,
+}
 
 
 class SyncToDebridJob(Job):
@@ -127,6 +136,15 @@ class SyncToDebridJob(Job):
             self.log.exception("provider push failed", extra={"provider": key})
             result.decide("", "", Outcome.FAILED, f"{type(e).__name__}: {e}", key)
 
+    @property
+    def _required_markers(self) -> set[Marker]:
+        wanted = {
+            Marker.GROUP: self.config.require_scene_format,
+            Marker.RESOLUTION: self.config.require_resolution,
+            Marker.LANGUAGE: self.config.require_language_tag,
+        }
+        return {marker for marker, required in wanted.items() if required}
+
     def _size_cap(self, account: Account) -> int | None:
         plan_gb = account.plan.max_download_gb
         cap = plan_gb * 1_000_000_000 if plan_gb else None
@@ -152,12 +170,10 @@ class SyncToDebridJob(Job):
                 p.torrent_name, p.info_hash, Outcome.HASH_MISMATCH, computed, key
             )
 
-        if self.config.require_scene_format and not filters.is_scene_formatted(
-            p.torrent_name
-        ):
-            return Decision(
-                p.torrent_name, p.info_hash, Outcome.NOT_SCENE_FORMAT, "", key
-            )
+        missing = filters.missing_markers(p.torrent_name, self._required_markers)
+        for marker, outcome in _MARKER_OUTCOMES.items():
+            if marker in missing:
+                return Decision(p.torrent_name, p.info_hash, outcome, "", key)
 
         if self.config.min_fetched_fraction > 0:
             fetched = stremhu.fetched_fraction(

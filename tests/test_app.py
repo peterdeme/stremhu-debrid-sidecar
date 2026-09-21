@@ -1,4 +1,4 @@
-"""Eight tests, picked by what has actually broken rather than by coverage."""
+"""Nine tests, picked by what has actually broken rather than by coverage."""
 
 from pathlib import Path
 
@@ -6,6 +6,7 @@ import pytest
 
 from app import config as config_module
 from app import db, filters, stremhu
+from app.filters import Marker
 from app.lzstring import compress_to_encoded_uri_component
 
 PAGES = ["/", "/sync", "/share"]
@@ -40,6 +41,7 @@ def test_settings_round_trip(client, store):
             "lookback_hours": "72",
             "min_fetched_percent": "40",
             "require_scene_format": "true",
+            "require_language_tag": "true",
             "seed_preference": "3",
         },
     )
@@ -47,6 +49,8 @@ def test_settings_round_trip(client, store):
     assert (cfg.push_interval_minutes, cfg.lookback_hours) == (25, 72)
     assert cfg.min_fetched_fraction == 0.4
     assert cfg.require_scene_format is True
+    assert cfg.require_language_tag is True
+    assert cfg.require_resolution is False
     assert cfg.push_enabled is False  # unchecked box is absent from the post
 
     # The publish interval is clamped in code, not merely asked for in the UI.
@@ -141,6 +145,28 @@ def test_scene_format_detection(name, expected):
     flattened to spaces somewhere upstream - so the shapes are what matter, and
     the names carrying them are made up."""
     assert filters.is_scene_formatted(name) is expected
+
+
+def test_a_well_formed_name_can_still_be_missing_what_matters():
+    """The reason the group check alone was not enough: scene releases turn up
+    with the resolution or the language left off the name, and downstream that
+    is the same as not having them, so the cache lookup never matches."""
+    name = "Harbour.Lights.S01E04.WEB-DL.DDP5.1.H.264-QVTX"
+    everything = {Marker.GROUP, Marker.RESOLUTION, Marker.LANGUAGE}
+
+    assert filters.is_scene_formatted(name)
+    assert filters.missing_markers(name, everything) == {
+        Marker.RESOLUTION,
+        Marker.LANGUAGE,
+    }
+    assert filters.missing_markers(name, {Marker.GROUP}) == set()
+    assert filters.missing_markers(name, set()) == set()
+    assert (
+        filters.missing_markers(
+            "Harbour.Lights.S01.1080p.AMZN.WEB-DL.DDP5.1.H.264.HUN.ENG-QVTX", everything
+        )
+        == set()
+    )
 
 
 def test_site_tags_do_not_hide_the_release_group():
