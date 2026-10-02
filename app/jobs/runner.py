@@ -40,6 +40,13 @@ class JobRunner:
         outcomes = UPLOAD_OUTCOMES if only_uploads else ()
         return self.store.runs.history(job, MAX_RUNS_KEPT, with_outcomes=outcomes)
 
+    def next_run(self, job: JobName) -> float | None:
+        scheduled = self.scheduler.get_job(job)
+        # Jobs added before the scheduler starts are pending and have no
+        # next_run_time yet, hence the getattr.
+        when = getattr(scheduled, "next_run_time", None)
+        return when.timestamp() if when else None
+
     async def run(self, name: str) -> RunResult | None:
         job = get(name)
         if job is None:

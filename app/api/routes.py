@@ -81,12 +81,13 @@ def get_router(
         page: Annotated[Renderer, Depends(provide_page)],
         store: Annotated[Store, Depends(provide_store)],
         runner: Annotated[JobRunner, Depends(provide_runner)],
-        only_uploads: bool = False,
     ):
+        # Both lists are rendered and the page toggles between them, so the
+        # filter needs no reload but still shows a full page of upload runs.
         return page.render(
             "sync.html",
-            runs=runner.runs_for(JobName.SYNC_TO_DEBRID, only_uploads=only_uploads),
-            only_uploads=only_uploads,
+            runs=runner.runs_for(JobName.SYNC_TO_DEBRID),
+            upload_runs=runner.runs_for(JobName.SYNC_TO_DEBRID, only_uploads=True),
             pushed=store.debrid.count_pushed(),
         )
 
