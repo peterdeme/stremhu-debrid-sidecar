@@ -28,5 +28,19 @@
   </header>
   {% block content %}{% endblock %}
 </div>
+<script>
+  // Timestamps are formatted here so they show in the browser's timezone
+  // rather than the container's. Relative ones get the exact time on hover,
+  // and data-abs ones print it, with a separator before the relative text.
+  document.querySelectorAll("time[data-ts]").forEach(function (el) {
+    var when = new Date(Number(el.dataset.ts) * 1000);
+    el.title = when.toLocaleString("hu-HU");
+    if (el.hasAttribute("data-abs")) {
+      el.textContent = when.toLocaleString("hu-HU", {
+        month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
+      }) + " ·";
+    }
+  });
+</script>
 </body>
 </html>

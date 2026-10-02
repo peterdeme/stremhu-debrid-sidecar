@@ -229,34 +229,54 @@
   <div class="mb-3 flex items-baseline justify-between">
     <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-500">Futások</h2>
     <div class="flex items-baseline gap-4">
-      <form method="get" action="/sync">
-        <label class="flex items-center gap-2 text-xs text-slate-400">
-          <input type="checkbox" name="only_uploads" value="true" {% if only_uploads %}checked{% endif %}
-            onchange="this.form.submit()" class="rounded border-slate-700 bg-slate-900">
-          csak feltöltéssel járó futások megjelenítése
-        </label>
-      </form>
+      <label class="flex items-center gap-2 text-xs text-slate-400">
+        <input type="checkbox" data-only-uploads class="rounded border-slate-700 bg-slate-900">
+        csak feltöltéssel járó futások megjelenítése
+      </label>
       <span class="text-xs text-slate-500">{{ pushed }} torrent feltöltve eddig</span>
     </div>
   </div>
 
-  <div class="mb-4 rounded-xl border border-slate-800 bg-slate-900/40 p-4">
+  <div class="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-slate-800 bg-slate-900/40 p-4">
     <form method="post" action="/run/sync_to_debrid">
       <button class="rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-medium hover:bg-indigo-500
         {% if JobName.SYNC_TO_DEBRID in running %}opacity-50{% endif %}">
         {% if JobName.SYNC_TO_DEBRID in running %}Feltöltés folyamatban…{% else %}Feltöltés most{% endif %}
       </button>
     </form>
+    {% set next_ts = next_runs[JobName.SYNC_TO_DEBRID] %}
+    {% if next_ts %}
+    <span class="ml-auto text-xs text-slate-500">
+      Következő futás:
+      <time data-ts="{{ next_ts }}" class="text-slate-300">{{ next_ts | relative_future }}</time>
+    </span>
+    {% endif %}
   </div>
 
-  {% if only_uploads %}
-  {% set empty_text = 'Még egyik futás sem töltött fel semmit.' %}
-  {% else %}
-  {% set empty_text = 'Még nem futott le semmi. A feltöltés ' ~ cfg.push_interval_minutes ~ ' percenként indul.' %}
-  {% endif %}
-  {% with run_label = 'Feltöltés' %}
-  {% include "_runs.html" %}
-  {% endwith %}
+  <div data-runs="all">
+    {% with runs = runs, empty_text = 'Még nem futott le semmi. A feltöltés ' ~ cfg.push_interval_minutes ~ ' percenként indul.' %}
+    {% include "_runs.html" %}
+    {% endwith %}
+  </div>
+  <div data-runs="uploads" hidden>
+    {% with runs = upload_runs, empty_text = 'Még egyik futás sem töltött fel semmit.' %}
+    {% include "_runs.html" %}
+    {% endwith %}
+  </div>
+  <script>
+    (function () {
+      var toggle = document.querySelector("[data-only-uploads]");
+      var all = document.querySelector('[data-runs="all"]');
+      var uploads = document.querySelector('[data-runs="uploads"]');
+      function apply() {
+        all.hidden = toggle.checked;
+        uploads.hidden = !toggle.checked;
+      }
+      toggle.addEventListener("change", apply);
+      // Browsers restore checkbox state on back/forward, so sync once on load.
+      apply();
+    })();
+  </script>
 </section>
 
 <aside class="mt-10 rounded-xl border border-slate-800 bg-slate-900/30 p-5">

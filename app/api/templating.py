@@ -82,12 +82,24 @@ def relative_time(ts: float) -> str:
     return f"{seconds // 86400} napja"
 
 
+def relative_future(ts: float) -> str:
+    seconds = max(0, int(ts - time.time()))
+    if seconds < 60:
+        return "egy percen belül"
+    if seconds < 3600:
+        return f"{seconds // 60} perc múlva"
+    if seconds < 86400:
+        return f"{seconds // 3600} óra múlva"
+    return f"{seconds // 86400} nap múlva"
+
+
 templates.env.globals["outcome_label"] = lambda o: OUTCOME_LABELS.get(o, o.value)
 templates.env.globals["outcome_sentence"] = lambda o: OUTCOME_SENTENCES.get(o, o.value)
 templates.env.globals["outcome_tone"] = lambda o: (
     "good" if o in GOOD else ("bad" if o in BAD else "muted")
 )
 templates.env.filters["relative_time"] = relative_time
+templates.env.filters["relative_future"] = relative_future
 templates.env.globals["Outcome"] = Outcome
 templates.env.globals["JobName"] = JobName
 templates.env.globals["REPO_URL"] = REPO_URL
@@ -108,6 +120,7 @@ class Renderer:
             "cfg": self.config,
             "stremhu": stremhu.status(self.config),
             "running": sorted(self.runner.running),
+            "next_runs": {job: self.runner.next_run(job) for job in JobName},
             "min_publish_hours": config_module.MIN_PUBLISH_INTERVAL_HOURS,
             "env_password": passwords.env_password() is not None,
             "debrid_status": self.statuses.all(),

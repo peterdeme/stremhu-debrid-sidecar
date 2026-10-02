@@ -114,6 +114,13 @@
       legutóbbi hash lista
     </a>
     {% endif %}
+    {% set next_ts = next_runs[JobName.PUBLISH_TO_COMMUNITY] %}
+    {% if next_ts %}
+    <span class="ml-auto text-xs text-slate-500">
+      Következő futás:
+      <time data-ts="{{ next_ts }}" class="text-slate-300">{{ next_ts | relative_future }}</time>
+    </span>
+    {% endif %}
   </div>
 
   {% with run_label = 'Megosztás', empty_text = 'Még nem osztottunk meg semmit.' %}

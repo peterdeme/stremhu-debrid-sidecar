@@ -12,7 +12,7 @@ from app.jobs.sync_to_debrid import SyncToDebridJob
 from app.lzstring import compress_to_encoded_uri_component
 from app.models import JobName, Outcome
 
-PAGES = ["/", "/sync", "/sync?only_uploads=true", "/share"]
+PAGES = ["/", "/sync", "/share"]
 
 
 @pytest.mark.parametrize("path", PAGES)

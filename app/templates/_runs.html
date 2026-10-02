@@ -42,7 +42,10 @@
     <header class="border-b border-slate-800 bg-slate-900/60 px-5 py-3">
       <div class="flex items-baseline justify-between">
         <h3 class="text-sm font-medium">Legutóbbi futás</h3>
-        <span class="text-xs text-slate-500">{{ latest.started_at | relative_time }}</span>
+        <span class="text-xs text-slate-500">
+          <time data-ts="{{ latest.started_at }}" data-abs class="text-slate-400"></time>
+          {{ latest.started_at | relative_time }}
+        </span>
       </div>
       {% if latest.counts %}
         <p class="mt-1 text-xs text-slate-500">
@@ -64,7 +67,10 @@
         {% for run in earlier %}
           <div>
             <div class="flex items-baseline justify-between px-5 pt-3 text-xs text-slate-500">
-              <span>{{ run.started_at | relative_time }}</span>
+              <span>
+                <time data-ts="{{ run.started_at }}" data-abs class="text-slate-400"></time>
+                {{ run.started_at | relative_time }}
+              </span>
               <span>
                 {% for outcome, n in run.counts.items() %}{{ outcome_label(outcome) }}: {{ n }}{% if not loop.last %} · {% endif %}{% endfor %}
               </span>
@@ -80,7 +86,9 @@
 <script>
   // Paging is done here rather than in the query: a run is read in one go and
   // the lists are short enough to hold, but long enough to be unreadable.
-  document.querySelectorAll("ul[data-paged]").forEach(function (list) {
+  // A page can include this partial more than once, hence the :not() guard.
+  document.querySelectorAll("ul[data-paged]:not([data-paged-ready])").forEach(function (list) {
+    list.setAttribute("data-paged-ready", "");
     var size = Number(list.dataset.pageSize) || 25;
     var items = Array.prototype.slice.call(list.children);
     var pager = list.nextElementSibling;
