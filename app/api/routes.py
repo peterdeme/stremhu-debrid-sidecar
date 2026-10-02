@@ -81,10 +81,12 @@ def get_router(
         page: Annotated[Renderer, Depends(provide_page)],
         store: Annotated[Store, Depends(provide_store)],
         runner: Annotated[JobRunner, Depends(provide_runner)],
+        only_uploads: bool = False,
     ):
         return page.render(
             "sync.html",
-            runs=runner.runs_for(JobName.SYNC_TO_DEBRID),
+            runs=runner.runs_for(JobName.SYNC_TO_DEBRID, only_uploads=only_uploads),
+            only_uploads=only_uploads,
             pushed=store.debrid.count_pushed(),
         )
 

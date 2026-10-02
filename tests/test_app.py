@@ -1,5 +1,6 @@
-"""Nine tests, picked by what has actually broken rather than by coverage."""
+"""Ten tests, picked by what has actually broken rather than by coverage."""
 
+import sqlite3
 from pathlib import Path
 
 import pytest
@@ -7,9 +8,11 @@ import pytest
 from app import config as config_module
 from app import db, filters, stremhu
 from app.filters import Marker
+from app.jobs.sync_to_debrid import SyncToDebridJob
 from app.lzstring import compress_to_encoded_uri_component
+from app.models import JobName, Outcome
 
-PAGES = ["/", "/sync", "/share"]
+PAGES = ["/", "/sync", "/sync?only_uploads=true", "/share"]
 
 
 @pytest.mark.parametrize("path", PAGES)
@@ -115,6 +118,60 @@ def test_info_hash_of_a_real_torrent_and_of_rubbish():
 
     for rubbish in (b"", b"not a torrent", blob[:20], b"d4:infod6:lengthi1e"):
         assert stremhu.info_hash_of(rubbish) is None
+
+
+def test_rejected_names_stay_out_of_the_next_query(tmp_path, store):
+    """Every run used to fetch, decode and reject the same badly named
+    torrents, and they filled the playback limit. Switching the filter off has
+    to bring them back, or the setting would only ever apply to new plays."""
+    db_path = tmp_path / "app.db"
+    conn = sqlite3.connect(db_path)
+    conn.executescript(
+        """
+        create table playback_histories (
+            indexer_id text, torrent_id text, created_at text, torrent_name text,
+            file_name text, file_index integer, imdb_info text
+        );
+        create table torrent_files (
+            indexer_id text, torrent_id text, info_hash text, torrent_bytes blob
+        );
+        """
+    )
+    for i, name in enumerate(["Some Show S01", "Good.Show.S01.1080p.WEB-DL-GRP"]):
+        conn.execute(
+            "insert into playback_histories values (?, ?, '2026-01-01', ?, '', 0, null)",
+            ("idx", str(i), name),
+        )
+        conn.execute(
+            "insert into torrent_files values (?, ?, ?, x'00')",
+            ("idx", str(i), f"{i:040X}"),
+        )
+    conn.commit()
+    conn.close()
+    conn = stremhu.connect(db_path)
+
+    bad = f"{0:040x}"
+    run_id = store.runs.start(JobName.SYNC_TO_DEBRID, 0)
+    store.runs.finish(
+        run_id,
+        1,
+        None,
+        [("Some Show S01", bad, Outcome.NOT_SCENE_FORMAT.value, "", "torbox")],
+    )
+
+    def names(**settings):
+        store.config.save(settings)
+        job = SyncToDebridJob(config_module.load(store), store)
+        excluded = store.runs.hashes_with_outcome(job._final_rejections)
+        return {
+            p.torrent_name for p in stremhu.recent_playbacks(conn, exclude=excluded)
+        }
+
+    assert names(require_scene_format=True) == {"Good.Show.S01.1080p.WEB-DL-GRP"}
+    assert names(require_scene_format=False, require_resolution=True) == {
+        "Some Show S01",
+        "Good.Show.S01.1080p.WEB-DL-GRP",
+    }
 
 
 def test_lzstring_matches_the_reference_implementation():
