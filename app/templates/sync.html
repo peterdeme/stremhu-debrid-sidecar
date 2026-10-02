@@ -228,7 +228,16 @@
 <section class="mt-10">
   <div class="mb-3 flex items-baseline justify-between">
     <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-500">Futások</h2>
-    <span class="text-xs text-slate-500">{{ pushed }} torrent feltöltve eddig</span>
+    <div class="flex items-baseline gap-4">
+      <form method="get" action="/sync">
+        <label class="flex items-center gap-2 text-xs text-slate-400">
+          <input type="checkbox" name="only_uploads" value="true" {% if only_uploads %}checked{% endif %}
+            onchange="this.form.submit()" class="rounded border-slate-700 bg-slate-900">
+          csak feltöltéssel járó futások megjelenítése
+        </label>
+      </form>
+      <span class="text-xs text-slate-500">{{ pushed }} torrent feltöltve eddig</span>
+    </div>
   </div>
 
   <div class="mb-4 rounded-xl border border-slate-800 bg-slate-900/40 p-4">
@@ -240,8 +249,12 @@
     </form>
   </div>
 
-  {% with run_label = 'Feltöltés', empty_text = 'Még nem futott le semmi. A feltöltés ' ~ cfg.push_interval_minutes ~ '
-  percenként indul.' %}
+  {% if only_uploads %}
+  {% set empty_text = 'Még egyik futás sem töltött fel semmit.' %}
+  {% else %}
+  {% set empty_text = 'Még nem futott le semmi. A feltöltés ' ~ cfg.push_interval_minutes ~ ' percenként indul.' %}
+  {% endif %}
+  {% with run_label = 'Feltöltés' %}
   {% include "_runs.html" %}
   {% endwith %}
 </section>

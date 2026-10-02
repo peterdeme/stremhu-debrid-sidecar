@@ -1,4 +1,6 @@
+import json
 import sqlite3
+from collections.abc import Collection
 
 from ..models import Decision, JobName, Outcome, RunResult
 
@@ -34,12 +36,23 @@ class RunStore:
                 [(run_id, *d) for d in decisions],
             )
 
-    def history(self, job: JobName | None = None, limit: int = 25) -> list[RunResult]:
-        sql = "select * from runs"
+    def history(
+        self,
+        job: JobName | None = None,
+        limit: int = 25,
+        with_outcomes: Collection[Outcome] = (),
+    ) -> list[RunResult]:
+        sql = "select * from runs where 1 = 1"
         params: list = []
         if job:
-            sql += " where job = ?"
+            sql += " and job = ?"
             params.append(job)
+        if with_outcomes:
+            sql += (
+                " and id in (select run_id from decisions where outcome in"
+                " (select value from json_each(?)))"
+            )
+            params.append(json.dumps([o.value for o in with_outcomes]))
         sql += " order by started_at desc limit ?"
         params.append(limit)
 
@@ -67,6 +80,16 @@ class RunStore:
                 "select * from decisions where run_id = ?", (run_id,)
             )
         ]
+
+    def hashes_with_outcome(self, outcomes: Collection[Outcome]) -> set[str]:
+        return {
+            r[0]
+            for r in self.conn.execute(
+                "select distinct info_hash from decisions where outcome in"
+                " (select value from json_each(?))",
+                (json.dumps([o.value for o in outcomes]),),
+            )
+        }
 
     def prune(self, keep: int = 500) -> int:
         with self.conn:

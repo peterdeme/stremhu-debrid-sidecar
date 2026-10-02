@@ -1,6 +1,8 @@
 import datetime
 import hashlib
+import json
 import sqlite3
+from collections.abc import Collection
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -43,7 +45,10 @@ def check_schema(conn: sqlite3.Connection) -> str:
 
 
 def recent_playbacks(
-    conn: sqlite3.Connection, limit: int = 200, since_hours: int | None = None
+    conn: sqlite3.Connection,
+    limit: int = 200,
+    since_hours: int | None = None,
+    exclude: Collection[str] = (),
 ) -> list[Playback]:
     cutoff = None
     if since_hours:
@@ -63,14 +68,13 @@ def recent_playbacks(
           on f.indexer_id = p.indexer_id and f.torrent_id = p.torrent_id
         where f.torrent_bytes is not null
           and (? is null or p.created_at >= ?)
+          and lower(f.info_hash) not in (select value from json_each(?))
         group by f.info_hash
         order by played_at desc
         limit ?
         """,
-        (cutoff, cutoff, limit),
+        (cutoff, cutoff, json.dumps(sorted(exclude)), limit),
     ).fetchall()
-
-    import json
 
     out = []
     for r in rows:

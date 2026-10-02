@@ -30,13 +30,15 @@ class SyncToDebridJob(Job):
         conn = stremhu.connect(self.config.database_path)
         try:
             stremhu.check_schema(conn)
+            rejected = self.store.runs.hashes_with_outcome(self._final_rejections)
             candidates = stremhu.recent_playbacks(
-                conn, since_hours=self.config.lookback_hours
+                conn, since_hours=self.config.lookback_hours, exclude=rejected
             )
             self.log.info(
                 "playbacks collected",
                 extra={
                     "candidates": len(candidates),
+                    "known_rejected": len(rejected),
                     "lookback_hours": self.config.lookback_hours,
                     "providers": len(services),
                 },
@@ -144,6 +146,17 @@ class SyncToDebridJob(Job):
             Marker.LANGUAGE: self.config.require_language_tag,
         }
         return {marker for marker, required in wanted.items() if required}
+
+    @property
+    def _final_rejections(self) -> set[Outcome]:
+        """Outcomes that won't change on the next run, so those hashes are skipped.
+
+        A broken .torrent stays broken. A bad name stays bad, but only while
+        that filter is on. Size and watch progress can still change, so they
+        aren't here.
+        """
+        name_checks = {_MARKER_OUTCOMES[m] for m in self._required_markers}
+        return {Outcome.HASH_MISMATCH} | name_checks
 
     def _size_cap(self, account: Account) -> int | None:
         plan_gb = account.plan.max_download_gb

@@ -7,10 +7,14 @@ from apscheduler.triggers.interval import IntervalTrigger
 from ..config import load as load_config
 from ..db import Store
 from ..debrids.status import DebridStatus
-from ..models import JobName, RunResult
+from ..models import JobName, Outcome, RunResult
 from . import get
 
 MAX_RUNS_KEPT = 25
+
+# A torrent that was already cached still lands in the debrid library, so it
+# counts as an upload as far as the run list is concerned.
+UPLOAD_OUTCOMES = (Outcome.PUSHED, Outcome.ALREADY_CACHED)
 
 
 class JobRunner:
@@ -32,8 +36,9 @@ class JobRunner:
         self.scheduler.shutdown(wait=False)
         self.log.info("scheduler stopped")
 
-    def runs_for(self, job: JobName) -> list[RunResult]:
-        return self.store.runs.history(job, MAX_RUNS_KEPT)
+    def runs_for(self, job: JobName, only_uploads: bool = False) -> list[RunResult]:
+        outcomes = UPLOAD_OUTCOMES if only_uploads else ()
+        return self.store.runs.history(job, MAX_RUNS_KEPT, with_outcomes=outcomes)
 
     async def run(self, name: str) -> RunResult | None:
         job = get(name)
