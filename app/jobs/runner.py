@@ -1,5 +1,6 @@
 import logging
 import time
+from datetime import UTC, datetime, timedelta
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
@@ -15,6 +16,10 @@ MAX_RUNS_KEPT = 25
 # A torrent that was already cached still lands in the debrid library, so it
 # counts as an upload as far as the run list is concerned.
 UPLOAD_OUTCOMES = (Outcome.PUSHED, Outcome.ALREADY_CACHED)
+
+# How long an overdue job waits after (re)scheduling. Long enough for the app
+# to finish starting, and to untick a box that was saved by mistake.
+OVERDUE_DELAY = timedelta(minutes=2)
 
 
 class JobRunner:
@@ -75,6 +80,19 @@ class JobRunner:
         finally:
             self.running.discard(name)
 
+    def _next_due(self, job: JobName, interval: timedelta) -> datetime:
+        """When a job is next due, counted from its last run.
+
+        An interval trigger on its own counts from the moment it's scheduled,
+        which is every startup and every settings save. A container restarted
+        more often than the interval would then never run the job at all.
+        """
+        soonest = datetime.now(UTC) + OVERDUE_DELAY
+        last = self.store.runs.last_started(job)
+        if last is None:
+            return soonest
+        return max(soonest, datetime.fromtimestamp(last, UTC) + interval)
+
     def reschedule(self) -> None:
         config = load_config(self.store)
         self.scheduler.remove_all_jobs()
@@ -88,22 +106,24 @@ class JobRunner:
             },
         )
         if config.push_enabled:
-            self.scheduler.add_job(
-                self.run,
-                IntervalTrigger(minutes=config.push_interval_minutes),
-                args=[JobName.SYNC_TO_DEBRID],
-                id=JobName.SYNC_TO_DEBRID,
-                name=JobName.SYNC_TO_DEBRID,
-                max_instances=1,
-                coalesce=True,
+            self._schedule(
+                JobName.SYNC_TO_DEBRID,
+                timedelta(minutes=config.push_interval_minutes),
             )
         if config.publish_enabled:
-            self.scheduler.add_job(
-                self.run,
-                IntervalTrigger(hours=config.effective_publish_interval_hours),
-                args=[JobName.PUBLISH_TO_COMMUNITY],
-                id=JobName.PUBLISH_TO_COMMUNITY,
-                name=JobName.PUBLISH_TO_COMMUNITY,
-                max_instances=1,
-                coalesce=True,
+            self._schedule(
+                JobName.PUBLISH_TO_COMMUNITY,
+                timedelta(hours=config.effective_publish_interval_hours),
             )
+
+    def _schedule(self, job: JobName, interval: timedelta) -> None:
+        self.scheduler.add_job(
+            self.run,
+            IntervalTrigger(seconds=interval.total_seconds()),
+            args=[job],
+            id=job,
+            name=job,
+            max_instances=1,
+            coalesce=True,
+            next_run_time=self._next_due(job, interval),
+        )
