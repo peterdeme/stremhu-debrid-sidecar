@@ -106,6 +106,7 @@ def get_router(
         require_resolution: Annotated[bool, Form()] = False,
         require_language_tag: Annotated[bool, Form()] = False,
         seed_preference: Annotated[int, Form()] = SeedPreference.ALWAYS,
+        remove_inactive: Annotated[bool, Form()] = False,
     ):
         config.push_enabled = push_enabled
         config.push_interval_minutes = max(1, push_interval_minutes)
@@ -119,6 +120,7 @@ def get_router(
             if seed_preference in set(SeedPreference)
             else SeedPreference.ALWAYS
         )
+        config.remove_inactive = remove_inactive
         config_module.save(store, config)
 
         form = await request.form()

@@ -22,6 +22,7 @@ class Outcome(str, Enum):
     NO_FILE = "file no longer on disk"
     NO_TORRENT = "torrent no longer stored"
     HASH_MISMATCH = "hash mismatch"
+    REMOVED = "removed"
     FAILED = "failed"
 
 

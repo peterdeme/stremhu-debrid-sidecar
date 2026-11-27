@@ -55,8 +55,7 @@ def recent_playbacks(
         cutoff = (
             # stremhu writes naive local timestamps, so the cutoff has to be
             # built the same way. A tz-aware now() would be the bug.
-            datetime.datetime.now()  # noqa: DTZ005
-            - datetime.timedelta(hours=since_hours)
+            datetime.datetime.now() - datetime.timedelta(hours=since_hours)
         ).strftime("%Y-%m-%d %H:%M:%S.%f")
 
     rows = conn.execute(
