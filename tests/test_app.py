@@ -1,17 +1,21 @@
-"""Eleven tests, picked by what has actually broken rather than by coverage."""
+"""Twelve tests, picked by what has actually broken rather than by coverage."""
 
 import asyncio
 import json
 import sqlite3
+import time
 from pathlib import Path
 
 import httpx
 import pytest
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from app import config as config_module
 from app import db, filters, stremhu
+from app.debrids.status import DebridStatus
 from app.debrids.torbox import Torbox
 from app.filters import Marker
+from app.jobs.runner import JobRunner
 from app.jobs.sync_to_debrid import SyncToDebridJob
 from app.lzstring import compress_to_encoded_uri_component
 from app.models import JobName, Outcome
@@ -228,6 +232,29 @@ def test_only_dead_downloads_count_as_inactive():
     dead = asyncio.run(run())
     assert [t.state for t in dead] == ["expired", "incomplete", "reported missing"]
     assert removed == [{"torrent_id": 1, "operation": "delete"}]
+
+
+def test_schedule_continues_from_the_last_run(store):
+    """The interval used to be counted from startup, so a container restarted
+    every night never reached a 24 hour job. Rescheduling is what a restart and
+    a settings save both do."""
+    store.config.save({"publish_enabled": True, "push_enabled": True})
+    runner = JobRunner(AsyncIOScheduler(), store, DebridStatus())
+    now = time.time()
+
+    def due_in(job):
+        runner.reschedule()
+        return runner.next_run(job) - now
+
+    assert due_in(JobName.PUBLISH_TO_COMMUNITY) < 600
+
+    store.runs.start(JobName.PUBLISH_TO_COMMUNITY, now - 23 * 3600)
+    assert 3500 < due_in(JobName.PUBLISH_TO_COMMUNITY) < 3700
+
+    store.runs.start(JobName.PUBLISH_TO_COMMUNITY, now - 30 * 3600)
+    store.runs.start(JobName.SYNC_TO_DEBRID, now - 5 * 60)
+    assert 3500 < due_in(JobName.PUBLISH_TO_COMMUNITY) < 3700
+    assert 500 < due_in(JobName.SYNC_TO_DEBRID) < 700
 
 
 def test_lzstring_matches_the_reference_implementation():

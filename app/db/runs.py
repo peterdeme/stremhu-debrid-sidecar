@@ -36,6 +36,11 @@ class RunStore:
                 [(run_id, *d) for d in decisions],
             )
 
+    def last_started(self, job: JobName) -> float | None:
+        return self.conn.execute(
+            "select max(started_at) from runs where job = ?", (job,)
+        ).fetchone()[0]
+
     def history(
         self,
         job: JobName | None = None,
