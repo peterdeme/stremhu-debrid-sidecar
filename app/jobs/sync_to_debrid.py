@@ -1,7 +1,7 @@
 import sqlite3
 
 from .. import debrids, filters, stremhu
-from ..debrids import Debrid
+from ..debrids import Debrid, DebridClient
 from ..debrids.torbox import TorboxError
 from ..filters import Marker
 from ..models import Account, Decision, JobName, Outcome, RunResult
@@ -82,6 +82,8 @@ class SyncToDebridJob(Job):
             async with provider.client(api_key) as client:
                 account = await client.account()
                 result.accounts[key] = account
+                if self.config.remove_inactive:
+                    await self._remove_inactive(client, key, result)
                 if not pending:
                     return
 
@@ -137,6 +139,35 @@ class SyncToDebridJob(Job):
         except Exception as e:
             self.log.exception("provider push failed", extra={"provider": key})
             result.decide("", "", Outcome.FAILED, f"{type(e).__name__}: {e}", key)
+
+    async def _remove_inactive(
+        self, client: DebridClient, key: str, result: RunResult
+    ) -> None:
+        """Clear dead downloads off the account. Never fatal: it's housekeeping,
+        and a failure here must not cost the run its uploads."""
+        try:
+            dead = await client.inactive_torrents()
+        except Exception as e:
+            self.log.warning(
+                "could not list inactive downloads",
+                extra={"provider": key, "error": f"{type(e).__name__}: {e}"},
+            )
+            return
+
+        for t in dead:
+            try:
+                await client.remove_torrent(t.id)
+            except Exception as e:
+                self.log.warning(
+                    "could not remove inactive download",
+                    extra={
+                        "provider": key,
+                        "info_hash": t.info_hash,
+                        "error": f"{type(e).__name__}: {e}",
+                    },
+                )
+                continue
+            result.decide(t.name, t.info_hash, Outcome.REMOVED, t.state, key)
 
     @property
     def _required_markers(self) -> set[Marker]:

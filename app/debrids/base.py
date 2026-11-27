@@ -30,3 +30,10 @@ class DebridClient(ABC):
 
     @abstractmethod
     async def account_torrents(self) -> list[AccountTorrent]: ...
+
+    @abstractmethod
+    async def inactive_torrents(self) -> list[AccountTorrent]:
+        """Downloads that are dead: nothing left to fetch, safe to remove."""
+
+    @abstractmethod
+    async def remove_torrent(self, torrent_id: int) -> None: ...

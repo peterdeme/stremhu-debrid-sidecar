@@ -21,6 +21,7 @@ class Config:
     require_resolution: bool = False
     require_language_tag: bool = False
     seed_preference: int = SeedPreference.ALWAYS
+    remove_inactive: bool = False
 
     push_limit: int = 10
     max_torrent_size_gb: float = 0.0

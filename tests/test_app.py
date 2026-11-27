@@ -1,12 +1,16 @@
-"""Ten tests, picked by what has actually broken rather than by coverage."""
+"""Eleven tests, picked by what has actually broken rather than by coverage."""
 
+import asyncio
+import json
 import sqlite3
 from pathlib import Path
 
+import httpx
 import pytest
 
 from app import config as config_module
 from app import db, filters, stremhu
+from app.debrids.torbox import Torbox
 from app.filters import Marker
 from app.jobs.sync_to_debrid import SyncToDebridJob
 from app.lzstring import compress_to_encoded_uri_component
@@ -46,6 +50,7 @@ def test_settings_round_trip(client, store):
             "require_scene_format": "true",
             "require_language_tag": "true",
             "seed_preference": "3",
+            "remove_inactive": "true",
         },
     )
     cfg = config_module.load(store)
@@ -54,6 +59,7 @@ def test_settings_round_trip(client, store):
     assert cfg.require_scene_format is True
     assert cfg.require_language_tag is True
     assert cfg.require_resolution is False
+    assert cfg.remove_inactive is True
     assert cfg.push_enabled is False  # unchecked box is absent from the post
 
     # The publish interval is clamped in code, not merely asked for in the UI.
@@ -172,6 +178,56 @@ def test_rejected_names_stay_out_of_the_next_query(tmp_path, store):
         "Some Show S01",
         "Good.Show.S01.1080p.WEB-DL-GRP",
     }
+
+
+def test_only_dead_downloads_count_as_inactive():
+    """This list gets deleted, so it has to be exactly what TorBox's UI calls
+    inactive. Going by the `active` flag alone picked 563 of 568 downloads on a
+    real account: every cached one has it off too."""
+
+    def reply(request):
+        if request.url.path.endswith("/torrents/mylist"):
+            states = [
+                ("expired", False),
+                ("incomplete", False),
+                ("reported missing", False),
+                ("cached", False),
+                ("completed", False),
+                ("uploading (no peers)", False),
+                ("uploading", True),
+                ("some state torbox adds later", False),
+            ]
+            return httpx.Response(
+                200,
+                json={
+                    "data": [
+                        {
+                            "id": i,
+                            "hash": f"{i:040x}",
+                            "name": state,
+                            "download_state": state,
+                            "active": active,
+                        }
+                        for i, (state, active) in enumerate(states, start=1)
+                    ]
+                },
+            )
+        removed.append(json.loads(request.content))
+        return httpx.Response(200, json={"success": True})
+
+    async def run():
+        async with Torbox("key") as client:
+            client._client = httpx.AsyncClient(
+                base_url="https://torbox.test", transport=httpx.MockTransport(reply)
+            )
+            dead = await client.inactive_torrents()
+            await client.remove_torrent(dead[0].id)
+            return dead
+
+    removed: list[dict] = []
+    dead = asyncio.run(run())
+    assert [t.state for t in dead] == ["expired", "incomplete", "reported missing"]
+    assert removed == [{"torrent_id": 1, "operation": "delete"}]
 
 
 def test_lzstring_matches_the_reference_implementation():

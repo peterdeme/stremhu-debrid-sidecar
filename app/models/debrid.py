@@ -42,3 +42,5 @@ class AccountTorrent:
     name: str
     size: int
     state: str
+    id: int = 0
+    active: bool = False

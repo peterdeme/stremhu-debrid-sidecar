@@ -216,6 +216,24 @@
           egyes peerekhez.
         </p>
       </div>
+
+      <div class="p-5">
+        <label class="flex items-center gap-2 text-sm">
+          <input type="checkbox" name="remove_inactive" value="true" {% if cfg.remove_inactive %}checked{% endif %}
+            class="rounded border-slate-700 bg-slate-900">
+          Inaktív letöltések törlése
+        </label>
+        <p class="mt-2 text-xs leading-relaxed text-slate-500">
+          Minden futáskor törli a fiókodból azokat a letöltéseket, amik a {{ provider.name }} felületén
+          az „Inactive" szűrő alatt vannak: lejárt (<code class="text-slate-400">expired</code>),
+          félbemaradt (<code class="text-slate-400">incomplete</code>) vagy hiányzónak jelentett
+          (<code class="text-slate-400">reported missing</code>).
+        </p>
+        <p class="mt-2 text-xs leading-relaxed text-slate-500">
+          A teljes fiókra vonatkozik, nem csak arra, amit innen töltöttél fel, és a törlés nem
+          vonható vissza.
+        </p>
+      </div>
     </div>
   </section>
   {% endfor %}
@@ -254,7 +272,8 @@
   </div>
 
   <div data-runs="all">
-    {% with runs = runs, empty_text = 'Még nem futott le semmi. A feltöltés ' ~ cfg.push_interval_minutes ~ ' percenként indul.' %}
+    {% with runs = runs, empty_text = 'Még nem futott le semmi. A feltöltés ' ~ cfg.push_interval_minutes ~ ' percenként
+    indul.' %}
     {% include "_runs.html" %}
     {% endwith %}
   </div>

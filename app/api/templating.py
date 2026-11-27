@@ -51,6 +51,7 @@ OUTCOME_LABELS = {
     Outcome.NO_FILE: "a stremhu törölte a fájlt",
     Outcome.NO_TORRENT: "a .torrent már nincs meg",
     Outcome.HASH_MISMATCH: "hash eltérés",
+    Outcome.REMOVED: "inaktív, törölve",
     Outcome.FAILED: "sikertelen",
 }
 OUTCOME_SENTENCES = {
@@ -65,6 +66,7 @@ OUTCOME_SENTENCES = {
     Outcome.NO_FILE: "a stremhu már törölte a fájlt",
     Outcome.NO_TORRENT: "a .torrent már nincs meg, nem került feltöltésre",
     Outcome.HASH_MISMATCH: "hash eltérés, nem került feltöltésre",
+    Outcome.REMOVED: "inaktív volt, törölve a fiókból",
     Outcome.FAILED: "sikertelen feltöltés",
 }
 GOOD = {Outcome.PUSHED, Outcome.ALREADY_CACHED}

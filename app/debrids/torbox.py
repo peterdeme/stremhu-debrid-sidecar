@@ -19,6 +19,11 @@ PLANS = {
 }
 UNKNOWN_PLAN = Plan("ismeretlen", None, None, None)
 
+# What TorBox's UI lists under "Inactive": downloads with nothing left to fetch.
+# Matched by name, not by the `active` flag, which is also off for every cached
+# or finished download. A state we haven't seen is never treated as dead.
+DEAD_STATES = frozenset({"expired", "incomplete", "reported missing"})
+
 
 class Torbox(DebridClient):
     def __init__(self, api_key: str, timeout: float = 120.0):
@@ -83,9 +88,32 @@ class Torbox(DebridClient):
                         name=t.get("name") or "",
                         size=t.get("size") or 0,
                         state=t.get("download_state") or "",
+                        id=t.get("id") or 0,
+                        active=bool(t.get("active")),
                     )
                 )
         return out
+
+    async def inactive_torrents(self) -> list[AccountTorrent]:
+        return [
+            t
+            for t in await self.account_torrents()
+            if t.id and not t.active and t.state in DEAD_STATES
+        ]
+
+    async def remove_torrent(self, torrent_id: int) -> None:
+        r = await self._client.post(
+            "/torrents/controltorrent",
+            json={"torrent_id": torrent_id, "operation": "delete"},
+        )
+        body = {}
+        try:
+            body = r.json()
+        except ValueError:
+            pass
+        if r.status_code != 200 or not body.get("success"):
+            detail = body.get("detail") or body.get("error") or r.text[:200]
+            raise TorboxError(f"controltorrent {r.status_code}: {detail}")
 
     async def add_torrent(self, blob: bytes, name: str, seed: int | None) -> int | None:
         data = {}
